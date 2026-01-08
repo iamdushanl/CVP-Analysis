@@ -15,8 +15,7 @@ A comprehensive Cost-Volume-Profit (CVP) Analysis web application for business i
 
 ## 🎯 Live Demo
 
-Visit the live application: [Your GitHub Pages URL will appear here]
-
+Visit the live application: https://cvpintelligence.online/
 ## 💻 Local Development
 
 To run this application locally:
