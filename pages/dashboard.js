@@ -358,6 +358,16 @@ const DashboardPage = {
                             tension: 0.4,
                             fill: false,
                             order: 0
+                        },
+                        {
+                            label: 'Daily Fixed Cost',
+                            data: sortedDates.map(() => dailyFixedCost),
+                            borderColor: 'rgb(249, 115, 22)',
+                            borderWidth: 2,
+                            borderDash: [10, 5],
+                            pointRadius: 0,
+                            fill: false,
+                            order: 4
                         }
                     ]
                 },

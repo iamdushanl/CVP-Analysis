@@ -20,6 +20,10 @@ const App = {
         this.setupNavigation();
         this.setupUserProfile();
         this.navigate('dashboard');
+
+        // Initialize chatbot after DOM is fully ready
+        this.initializeChatbot();
+
         console.log('✅ Application ready');
     },
 
@@ -133,6 +137,77 @@ const App = {
                 pageModule.renderCharts();
             }
         }, 100);
+    },
+
+    initializeChatbot() {
+        console.log('🤖 Starting chatbot initialization...');
+
+        // Wait for DOM to be fully ready
+        const attemptInit = () => {
+            try {
+                // Check if all dependencies are loaded
+                if (typeof ChatbotUI === 'undefined') {
+                    console.error('❌ ChatbotUI not loaded');
+                    return false;
+                }
+
+                if (typeof ChatbotService === 'undefined') {
+                    console.error('❌ ChatbotService not loaded');
+                    return false;
+                }
+
+                if (typeof CVP_KNOWLEDGE_BASE === 'undefined') {
+                    console.error('❌ CVP_KNOWLEDGE_BASE not loaded');
+                    return false;
+                }
+
+                // Initialize the chatbot UI
+                ChatbotUI.init();
+                console.log('✅ Chatbot initialized successfully');
+                console.log('   - ChatbotService initialized:', ChatbotService.isInitialized);
+                console.log('   - API Key configured:', ChatbotService.apiKey ? 'Yes' : 'No');
+
+                // Verify the chatbot widget is in the DOM
+                setTimeout(() => {
+                    const widget = document.querySelector('.chatbot-widget');
+                    if (widget) {
+                        console.log('✅ Chatbot widget rendered in DOM');
+                    } else {
+                        console.warn('⚠️ Chatbot widget not found in DOM');
+                    }
+                }, 100);
+
+                return true;
+            } catch (error) {
+                console.error('❌ Chatbot initialization error:', error);
+                console.error('   Stack:', error.stack);
+                return false;
+            }
+        };
+
+        // Attempt initialization with retry
+        let attempts = 0;
+        const maxAttempts = 3;
+
+        const tryInit = () => {
+            attempts++;
+            console.log(`   Attempt ${attempts}/${maxAttempts}...`);
+
+            if (attemptInit()) {
+                return; // Success
+            }
+
+            if (attempts < maxAttempts) {
+                console.log(`   Retrying in ${attempts * 200}ms...`);
+                setTimeout(tryInit, attempts * 200);
+            } else {
+                console.error('❌ Failed to initialize chatbot after', maxAttempts, 'attempts');
+                console.error('   Please check that all chatbot scripts are loaded correctly');
+            }
+        };
+
+        // Start initialization after a brief delay to ensure all scripts are loaded
+        setTimeout(tryInit, 300);
     },
 
     refresh() {

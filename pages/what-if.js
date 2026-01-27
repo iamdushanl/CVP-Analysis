@@ -167,6 +167,7 @@ const WhatIfPage = {
 
         // Add current position marker
         const currentRevenue = this.sellingPrice * this.salesVolume;
+        const isAboveBreakEven = this.salesVolume > chartData.breakEvenUnits;
 
         Components.createChart('whatIfCVPChart', {
             type: 'line',
@@ -175,10 +176,24 @@ const WhatIfPage = {
                 datasets: [
                     ...chartData.datasets,
                     {
+                        label: 'Break-Even Point',
+                        data: chartData.labels.map(units =>
+                            Math.abs(units - chartData.breakEvenUnits) <= (chartData.labels[1] - chartData.labels[0]) / 2
+                                ? chartData.breakEvenValue : null
+                        ),
+                        pointRadius: 12,
+                        pointBackgroundColor: 'rgb(234, 179, 8)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 3,
+                        showLine: false
+                    },
+                    {
                         label: 'Current Position',
                         data: chartData.labels.map(units => units === this.salesVolume ? currentRevenue : null),
-                        pointRadius: 8,
-                        pointBackgroundColor: 'rgb(16, 185, 129)',
+                        pointRadius: 10,
+                        pointBackgroundColor: isAboveBreakEven ? 'rgb(16, 185, 129)' : 'rgb(239, 68, 68)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
                         showLine: false
                     }
                 ]
@@ -190,7 +205,16 @@ const WhatIfPage = {
                     legend: { position: 'bottom' },
                     tooltip: {
                         callbacks: {
-                            label: (context) => context.dataset.label + ': ' + Components.formatCurrency(context.parsed.y)
+                            label: (context) => context.dataset.label + ': ' + Components.formatCurrency(context.parsed.y),
+                            afterLabel: function (context) {
+                                if (context.dataset.label === 'Break-Even Point') {
+                                    return `At ${chartData.breakEvenUnits} units`;
+                                }
+                                if (context.dataset.label === 'Current Position') {
+                                    return isAboveBreakEven ? 'PROFITABLE ✓' : 'LOSS ✗';
+                                }
+                                return '';
+                            }
                         }
                     }
                 },
@@ -199,12 +223,16 @@ const WhatIfPage = {
                         beginAtZero: true,
                         ticks: {
                             callback: value => Components.formatCurrency(value)
+                        },
+                        title: {
+                            display: true,
+                            text: 'Amount (LKR)'
                         }
                     },
                     x: {
                         title: {
                             display: true,
-                            text: 'Units'
+                            text: 'Units Sold'
                         }
                     }
                 }

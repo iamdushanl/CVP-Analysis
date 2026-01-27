@@ -128,16 +128,39 @@ const CVPCalculatorPage = {
 
     Components.createChart('cvpChart', {
       type: 'line',
-      data: chartData,
+      data: {
+        labels: chartData.labels,
+        datasets: [
+          ...chartData.datasets,
+          {
+            label: 'Break-Even Point',
+            data: chartData.labels.map(units =>
+              Math.abs(units - chartData.breakEvenUnits) <= (chartData.labels[1] - chartData.labels[0]) / 2
+                ? chartData.breakEvenValue : null
+            ),
+            pointRadius: 12,
+            pointBackgroundColor: 'rgb(234, 179, 8)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 3,
+            showLine: false
+          }
+        ]
+      },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'top' },
+          legend: { position: 'bottom' },
           tooltip: {
             callbacks: {
               label: function (context) {
                 return context.dataset.label + ': ' + Components.formatCurrency(context.parsed.y);
+              },
+              afterLabel: function (context) {
+                if (context.dataset.label === 'Break-Even Point') {
+                  return `At ${chartData.breakEvenUnits} units`;
+                }
+                return '';
               }
             }
           }

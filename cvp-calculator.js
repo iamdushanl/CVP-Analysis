@@ -186,6 +186,15 @@ const CVPCalculator = {
                     borderColor: 'rgb(239, 68, 68)',
                     backgroundColor: 'rgba(239, 68, 68, 0.1)',
                     tension: 0.1
+                },
+                {
+                    label: 'Fixed Costs',
+                    data: labels.map(() => fixedCosts),
+                    borderColor: 'rgb(249, 115, 22)',
+                    borderWidth: 2,
+                    borderDash: [10, 5],
+                    pointRadius: 0,
+                    fill: false
                 }
             ],
             breakEvenUnits: Math.round(breakEvenUnits),
