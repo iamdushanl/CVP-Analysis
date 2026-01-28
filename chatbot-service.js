@@ -5,7 +5,7 @@
 
 const ChatbotService = {
     // Pre-configured API key - no user setup required
-    apiKey: 'AIzaSyCDkEIVVfelEGroa9fIKpXP2peXEqYjluI',
+    apiKey: 'AIzaSyDq5KB52pOk6dFA8ZpPKmezKikQ6i64ASU',
     conversationHistory: [],
     isInitialized: true, // Always initialized with hard-coded key
     maxHistoryLength: 50,
@@ -48,7 +48,7 @@ const ChatbotService = {
             throw new Error('API_KEY_MISSING');
         }
 
-        // Use v1 API with gemini-2.5-flash (has available quota)
+        // Use v1 API with gemini-2.5-flash (verified available via ListModels)
         const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`;
 
 
@@ -924,20 +924,7 @@ Please provide a clear, natural language response to the user's question using t
         return response.candidates[0].content.parts[0].text;
     },
 
-    buildContext() {
-        const products = DataManager.getProducts();
-        const sales = DataManager.getSalesLast30Days();
-        const fixedCosts = DataManager.getTotalFixedCosts();
 
-        return `You are a CVP (Cost-Volume-Profit) analysis expert assistant. You have access to the following business data:
-- Total Products: ${products.length}
-- Recent Sales Transactions: ${sales.length} (last 30 days)
-- Total Fixed Costs: LKR ${Math.round(fixedCosts)}/month
-- Currency: Sri Lankan Rupees (LKR)
-
-You have access to functions that retrieve exact data and perform calculations.
-Always use these functions instead of estimating. Be concise, accurate, and helpful.`;
-    },
 
     // ============================================
     // CONVERSATION HISTORY
