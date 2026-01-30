@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CVP Intelligence - Cost-Volume-Profit Analysis</title>
+  <link rel="icon" type="image/png" href="assets/logo/logo-full.png">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="auth-styles.css">
+  <link rel="stylesheet" href="chatbot-styles.css">
+  
+  <!-- Firebase SDK (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">CVP Intelligence</div>
+        <div class="sidebar-subtitle">Analytics Platform</div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-page="dashboard">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" data-page="products">
+          <span class="nav-icon">📦</span>
+          <span>Products</span>
+        </a>
+        <a href="#" class="nav-item" data-page="sales">
+          <span class="nav-icon">💰</span>
+          <span>Sales</span>
+        </a>
+        <a href="#" class="nav-item" data-page="fixed-costs">
+          <span class="nav-icon">💼</span>
+          <span>Fixed Costs</span>
+        </a>
+        <a href="#" class="nav-item" data-page="cvp-calculator">
+          <span class="nav-icon">🧮</span>
+          <span>CVP Calculator</span>
+        </a>
+        <a href="#" class="nav-item" data-page="what-if">
+          <span class="nav-icon">🔮</span>
+          <span>What-If Simulator</span>
+        </a>
+        <a href="#" class="nav-item" data-page="forecast">
+          <span class="nav-icon">📈</span>
+          <span>Forecast</span>
+        </a>
+        <a href="#" class="nav-item" data-page="heatmap">
+          <span class="nav-icon">🔥</span>
+          <span>Profit Heatmap</span>
+        </a>
+        <a href="#" class="nav-item" data-page="reports">
+          <span class="nav-icon">📄</span>
+          <span>Reports</span>
+        </a>
+        <a href="#" class="nav-item" data-page="settings">
+          <span class="nav-icon">⚙️</span>
+          <span>Settings</span>
+        </a>
+      </nav>
+    </aside>
+    <main class="main-content">
+      <header class="top-bar">
+        <h1 class="page-title" id="pageTitle">Dashboard</h1>
+        <div class="user-menu">
+          <div class="user-avatar" title="User Profile">U</div>
+        </div>
+      </header>
+      <div class="content-area" id="contentArea"></div>
+    </main>
+  </div>
+  <div id="modalContainer"></div>
+  <div id="toastContainer"></div>
+  <!-- Chatbot Widget Container -->
+  <div id="chatbotContainer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <!-- Firebase Integration -->
+  <script src="firebase-config.js"></script>
+  <script src="firebase-service.js"></script>
+
+  <script src="db-service.js"></script>
+  <script src="auth.js"></script>
+  <script src="settings-manager.js"></script>
+  <script src="data-manager.js"></script>
+  <script src="cvp-calculator.js"></script>
+  <script src="forecast-engine.js"></script>
+  <script src="components.js"></script>
+  <script src="csv-handler.js"></script>
+  <script src="heatmap-engine.js"></script>
+  <script src="pages/auth.js"></script>
+  <script src="pages/dashboard.js"></script>
+  <script src="pages/products.js"></script>
+  <script src="pages/sales.js"></script>
+  <script src="pages/fixed-costs.js"></script>
+  <script src="pages/cvp-calculator-page.js"></script>
+  <script src="pages/what-if.js"></script>
+  <script src="pages/forecast.js"></script>
+  <script src="pages/heatmap.js"></script>
+  <script src="pages/reports.js"></script>
+  <script src="pages/settings.js"></script>
+  <!-- Chatbot Scripts -->
+  <script src="cvp-knowledge-base.js"></script>
+  <script src="chatbot-service.js"></script>
+  <script src="chatbot-ui.js"></script>
+  <!-- Main App -->
+  <script src="app.js"></script>
+</body>
+
+</html>
