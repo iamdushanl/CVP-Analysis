@@ -1,7 +1,11 @@
 # CVP Intelligence Dashboard
 
 A comprehensive Cost-Volume-Profit (CVP) Analysis web application for business intelligence and financial planning.
+CVP Intelligence Dashboard
 
+CVP Intelligence Dashboard is a comprehensive Cost–Volume–Profit (CVP) analysis web application designed to support business intelligence, financial planning, and data-driven decision-making.
+
+The platform enables businesses to analyze profitability, forecast performance, and explore scenarios using interactive visualizations and professional reports—all while keeping data fully private within the browser.
 ## 🚀 Features
 
 - **Dashboard Analytics**: Real-time KPI tracking and visualization
