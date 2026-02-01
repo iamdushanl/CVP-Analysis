@@ -4,10 +4,10 @@
 // ========================================
 
 const ChatbotService = {
-    // Pre-configured API key - no user setup required
-    apiKey: 'AIzaSyDq5KB52pOk6dFA8ZpPKmezKikQ6i64ASU',
+    // Default API key - fallback if not in settings
+    apiKey: 'AIzaSyCpdpG1a-rKEMSKwImxUImMQ7V-00LXrY4',
     conversationHistory: [],
-    isInitialized: true, // Always initialized with hard-coded key
+    isInitialized: false,
     maxHistoryLength: 50,
 
     // ============================================
@@ -15,8 +15,14 @@ const ChatbotService = {
     // ============================================
     init() {
         try {
-            // API key is pre-configured, no need to load from settings
-            console.log('🤖 Chatbot Service initialized with pre-configured API key');
+            // Load API key from settings if available
+            const settings = typeof SettingsManager !== 'undefined' ? SettingsManager.getSettings() : {};
+            if (settings.geminiApiKey) {
+                this.apiKey = settings.geminiApiKey;
+                console.log('🤖 Chatbot Service initialized with user-provided API key');
+            } else {
+                console.log('🤖 Chatbot Service initialized with default API key');
+            }
 
             // Load conversation history
             const savedHistory = localStorage.getItem('chatbot_history');
@@ -24,7 +30,7 @@ const ChatbotService = {
                 this.conversationHistory = JSON.parse(savedHistory);
             }
 
-            this.isInitialized = true;
+            this.isInitialized = !!this.apiKey;
             console.log('✅ Prismo ready - AI assistant initialized');
             return true;
         } catch (error) {
@@ -48,8 +54,8 @@ const ChatbotService = {
             throw new Error('API_KEY_MISSING');
         }
 
-        // Use v1 API with gemini-2.5-flash (verified available via ListModels)
-        const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`;
+        // Use v1beta API with gemini-2.0-flash (most reliable for this key)
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${this.apiKey}`;
 
 
         const requestBody = {
@@ -84,37 +90,62 @@ const ChatbotService = {
             }];
         }
 
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody)
-            });
+        let retries = 0;
+        const maxRetries = 2;
+        const baseDelay = 1000;
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('API Error Response:', errorData);
+        while (retries <= maxRetries) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
 
-                // Properly identify error types
-                if (response.status === 429) {
-                    throw new Error('RATE_LIMIT');
-                } else if (response.status === 401 || response.status === 403) {
-                    // Only 401/403 indicate auth/key issues
-                    throw new Error('INVALID_KEY');
-                } else if (response.status === 400) {
-                    throw new Error('BAD_REQUEST');
-                } else {
-                    throw new Error(`API_ERROR: ${errorData.error?.message || 'Unknown error'}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+
+                    if (response.status === 429 && retries < maxRetries) {
+                        retries++;
+                        const delay = baseDelay * Math.pow(2, retries);
+                        console.warn(`⏰ Rate limit hit. Retrying in ${delay}ms (Attempt ${retries}/${maxRetries})...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    }
+
+                    console.error('API Error Response:', errorData);
+
+                    if (response.status === 429) {
+                        throw new Error('RATE_LIMIT');
+                    } else if (response.status === 401 || response.status === 403) {
+                        throw new Error('INVALID_KEY');
+                    } else if (response.status === 404) {
+                        throw new Error('MODEL_NOT_FOUND');
+                    } else if (response.status === 400) {
+                        throw new Error('BAD_REQUEST');
+                    } else {
+                        throw new Error(`API_ERROR: ${errorData.error?.message || 'Unknown error'}`);
+                    }
                 }
-            }
 
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('Gemini API error:', error);
-            throw error;
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                if (error.message === 'RATE_LIMIT' || error.message.includes('API_ERROR') || error.message === 'MODEL_NOT_FOUND' || error.message === 'INVALID_KEY' || error.message === 'BAD_REQUEST') {
+                    throw error;
+                }
+
+                if (retries < maxRetries) {
+                    retries++;
+                    const delay = baseDelay * Math.pow(2, retries);
+                    console.warn(`⚠️ Connection error. Retrying in ${delay}ms...`, error);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+                throw error;
+            }
         }
     },
 
@@ -631,23 +662,22 @@ const ChatbotService = {
             // Sort by total contribution (most profitable first)
             const sortedProducts = [...productsWithSales].sort((a, b) => b.totalCM - a.totalCM);
 
-            context += `=== 📦 PRODUCT DATA (${products.length} products) ===\n\n`;
+            context += `=== 📦 PRODUCT DATA (${products.length} products total) ===\n`;
+            context += `(Showing top ${Math.min(15, sortedProducts.length)} by profitability)\n\n`;
 
-            sortedProducts.forEach((p, index) => {
+            sortedProducts.slice(0, 15).forEach((p, index) => {
                 context += `${index + 1}. ${p.name}`;
                 if (p.category) context += ` [${p.category}]`;
-                if (p.sku) context += ` (SKU: ${p.sku})`;
                 context += `\n`;
-                context += `   • Price: ${settings.currency} ${p.price.toLocaleString()}\n`;
-                context += `   • Variable Cost: ${settings.currency} ${p.varCost.toLocaleString()}\n`;
-                context += `   • Contribution Margin: ${settings.currency} ${p.cm.toLocaleString()} per unit (${p.pvRatio}% P/V Ratio)\n`;
-                context += `   • Units Sold: ${p.totalUnits.toLocaleString()} units\n`;
-                context += `   • Revenue Generated: ${settings.currency} ${p.revenue.toLocaleString()}\n`;
-                context += `   • Total Contribution: ${settings.currency} ${p.totalCM.toLocaleString()}\n`;
-                context += `   • Break-Even Point: ${p.breakEven.toLocaleString()} units\n`;
-                context += `   • Profitability Rank: #${index + 1}\n`;
+                context += `   • Price: ${settings.currency} ${p.price.toLocaleString()} | CM: ${p.pvRatio}%\n`;
+                context += `   • Contribution: ${settings.currency} ${p.totalCM.toLocaleString()} (${p.totalUnits.toLocaleString()} units)\n`;
+                context += `   • Status: ${p.totalUnits >= p.breakEven ? '✅ Profitable' : '🎯 Needs ' + (p.breakEven - p.totalUnits) + ' more units to BEP'}\n`;
                 context += `\n`;
             });
+
+            if (sortedProducts.length > 15) {
+                context += `... and ${sortedProducts.length - 15} more products.\n\n`;
+            }
 
             // ============================================
             // 2. CATEGORY AGGREGATIONS
@@ -828,19 +858,14 @@ const ChatbotService = {
 
             // Build context for better responses
             const context = this.buildContext();
+            // Add instructions to be concise - saves tokens
             const enhancedMessage = `${context}
 
 ===USER QUESTION===
 ${userMessage}
 
 ===RESPONSE INSTRUCTIONS===
-1. Provide a COMPLETE, COMPREHENSIVE answer
-2. Use the EXACT product data above
-3. Include ALL relevant numbers and names
-4. DO NOT explain methodology - just provide the answer
-5. Format with bullet points or lists
-6. DO NOT cut off mid-sentence - finish your response
-7. Be specific and data-driven
+Answer concise, professional, and data-driven. Use the data above. If quota is low, be brief.
 
 Answer now:`;
 

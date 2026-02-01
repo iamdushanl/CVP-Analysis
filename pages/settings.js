@@ -103,6 +103,34 @@ const SettingsPage = {
             </p>
           </div>
         </div>
+
+        <!-- AI Assistant Settings -->
+        <div class="card">
+          <h3 class="card-title">🤖 AI Assistant Settings</h3>
+          <div style="margin-top: var(--space-4);">
+            <div class="form-group">
+              <label class="form-label">Google Gemini API Key</label>
+              <div style="display: flex; gap: var(--space-2);">
+                <input type="password" id="geminiApiKey" class="form-input" value="${settings.geminiApiKey || ''}" placeholder="AIzaSy...">
+                <button class="btn btn-secondary" onclick="SettingsPage.toggleAPIKeyVisibility()">👁️ Show</button>
+              </div>
+              <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: var(--space-2);">
+                Your key is stored locally and never sent to our servers.
+              </p>
+            </div>
+            <div id="apiKeyStatus" style="margin-bottom: var(--space-4);">
+                ${settings.geminiApiKey ? '<div style="padding: 12px; background: #d1fae5; color: #065f46; border-radius: 8px;">✅ API key configured!</div>' : ''}
+            </div>
+            <div style="display: flex; gap: var(--space-3);">
+              <button class="btn btn-primary" onclick="SettingsPage.saveAPIKey()">
+                💾 Save Key
+              </button>
+              <button class="btn btn-secondary" onclick="SettingsPage.testAPIKey()">
+                🧪 Test Connection
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Password Change Section -->

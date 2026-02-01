@@ -1,9 +1,9 @@
 // Test the exact configuration we'll use in chatbot-service.js
 const https = require('https');
 
-const apiKey = 'AIzaSyDq5KB52pOk6dFA8ZpPKmezKikQ6i64ASU';
-const modelName = 'gemini-2.5-flash';
-const apiVersion = 'v1';
+const apiKey = 'AIzaSyCpdpG1a-rKEMSKwImxUImMQ7V-00LXrY4';
+const modelName = 'gemini-1.5-flash';
+const apiVersion = 'v1beta';
 
 console.log('🧪 Testing Final Configuration...\n');
 console.log(`API Version: ${apiVersion}`);
