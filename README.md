@@ -1,141 +1,156 @@
-# CVP Intelligence Dashboard
+# CVP Intelligence Dashboard 🚀
 
-A comprehensive Cost-Volume-Profit (CVP) Analysis web application for business intelligence and financial planning.
-CVP Intelligence Dashboard
+A comprehensive, AI-powered Cost-Volume-Profit (CVP) Analysis web application designed for modern business intelligence and financial planning.
 
-CVP Intelligence Dashboard is a comprehensive Cost–Volume–Profit (CVP) analysis web application designed to support business intelligence, financial planning, and data-driven decision-making.
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Firebase](https://img.shields.io/badge/firebase-enabled-orange.svg)
+![AI](https://img.shields.io/badge/AI-Gemini%20Powered-purple.svg)
 
-The platform enables businesses to analyze profitability, forecast performance, and explore scenarios using interactive visualizations and professional reports—all while keeping data fully private within the browser.
-## 🚀 Features
+## 🌟 Overview
 
-- **Dashboard Analytics**: Real-time KPI tracking and visualization
-- **CVP Calculator**: Break-even analysis and profit planning
-- **Product Management**: Comprehensive product and sales data management
-- **What-If Analysis**: Scenario planning and sensitivity analysis
-- **Forecasting**: Advanced sales and profit forecasting
-- **Heatmap Analysis**: Visual performance analytics
-- **Report Generation**: Professional PDF reports with insights
-- **Data Import/Export**: CSV support for bulk operations
+CVP Intelligence Dashboard goes beyond traditional financial calculators by integrating **AI-driven insights** and **real-time cloud synchronization**. It enables businesses to analyze profitability, forecast performance, and explore "what-if" scenarios with the help of **Prismo**, an intelligent business assistant powered by Google's Gemini API.
 
-## 🎯 Live Demo
+## ✨ Key Features
 
-Visit the live application: https://cvpintelligence.online/
-## 💻 Local Development
+### 🤖 AI Business Assistant (Prismo)
+- **Natural Language Queries**: Ask questions like "What is my break-even point?" or "How can I improve my margin of safety?"
+- **Data-Driven Insights**: Prismo has full context of your sales, products, and costs to provide tailored advice.
+- **Strategic Recommendations**: Get actionable suggestions to optimize pricing and cost structures.
 
-To run this application locally:
+### ☁️ Cloud & Hybrid Storage
+- **Firebase Integration**: Secure cloud storage for your critical business data.
+- **Offline Capabilities**: robust `HybridDataManager` ensures you can work offline with local storage, syncing automatically when back online.
+- **Real-time Sync**: Changes propagate instantly across devices.
 
-1. Clone the repository:
+### 📊 Advanced Analytics
+- **Interactive Dashboard**: Real-time KPI tracking (Revenue, Profit, Contribution Margin).
+- **CVP Calculator**: precise Break-even analysis, Margin of Safety, and P/V Ratio calculations.
+- **Dynamic Heatmaps**: Visual performance analytics to identify top-performing products/regions.
+- **Sales Forecasting**: Advanced algorithms to project future revenue trends.
+- **Scenario Analysis**: "What-If" tools to model price changes, cost reductions, and volume shifts.
+
+### 🔐 Security & Management
+- **Secure Authentication**: Google Sign-In and Email/Password authentication via Firebase Auth.
+- **Role-Based Access**: Secure data handling.
+- **Product Management**: Comprehensive inventory and cost tracking.
+- **Report Generation**: Professional PDF exports for stakeholders.
+
+## 🛠️ Technology Stack
+
+- **Frontend**: Vanilla JavaScript (ES6+), HTML5, CSS3 (Modern Variables & Flexbox/Grid)
+- **AI/LLM**: Google Gemini API (via `chatbot-service.js`)
+- **Backend/Database**: Google Firebase (Firestore, Authentication)
+- **Visualization**: Chart.js
+- **Reporting**: jsPDF
+- **Testing**: Jest (Unit & Integration tests)
+
+## 🚀 Getting Started
+
+### Prerequisites
+- A modern web browser (Chrome, Edge, Firefox, Safari)
+- Local web server (optional, but recommended for development)
+- **Firebase Project**: You need a Firebase project with Firestore and Auth enabled.
+- **Gemini API Key**: For the AI chatbot features.
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/cvp-analysis.git
+   cd cvp-analysis
+   ```
+
+2. **Configure Firebase**
+   - Create a `firebase-config.js` file in the root directory (or update the existing one) with your Firebase credentials:
+     ```javascript
+     const firebaseConfig = {
+       apiKey: "YOUR_API_KEY",
+       authDomain: "YOUR_PROJECT.firebaseapp.com",
+       projectId: "YOUR_PROJECT_ID",
+       storageBucket: "YOUR_PROJECT.appspot.com",
+       messagingSenderId: "YOUR_SENDER_ID",
+       appId: "YOUR_APP_ID"
+     };
+     ```
+
+3. **Configure AI Chatbot**
+   - Ensure the `ChatbotService` in `chatbot-service.js` is configured with your secure or proxy endpoint for the Gemini API.
+
+4. **Run Locally**
+   You can use Python or Node.js to serve the files.
+
+   **Using Python:**
+   ```bash
+   python -m http.server 8000
+   ```
+
+   **Using Node.js (http-server):**
+   ```bash
+   npx http-server -p 8000
+   ```
+
+5. **Access the App**
+   Open your browser and navigate to `http://localhost:8000`.
+
+## 📂 Project Structure
+
+```
+CVP-Analysis-main/
+├── index.html              # Landing & Login page
+├── pages/                  # Application Modules (Dashboard, Products, CVP, etc.)
+├── assets/                 # Images and icons
+├── __tests__/              # Jest unit tests
+│
+├── Core Services
+│   ├── app.js              # meaningful app initialization
+│   ├── auth.js             # Auth state management
+│   ├── firebase-service.js # Firebase interaction layer
+│   └── data-manager.js     # Hybrid data handling (Sync logic)
+│
+├── Domain Logic
+│   ├── cvp-calculator.js   # Core financial math
+│   ├── forecast-engine.js  # Prediction algorithms
+│   └── heatmap-engine.js   # Visualization logic
+│
+├── AI Service
+│   ├── chatbot-service.js  # Prismo AI implementation
+│   ├── chatbot-ui.js       # Chat interface handling
+│   └── chatbot-styles.css  # Chat specific styling
+│
+└── Utilities
+    ├── csv-handler.js      # Data import/export
+    └── components.js       # Shared UI components
+```
+
+## 🧪 Running Tests
+
+This project uses **Jest** for unit testing to ensure calculation accuracy and system reliability.
+
 ```bash
-git clone https://github.com/YOUR-USERNAME/cvp-analysis.git
-cd cvp-analysis
+# Install dependencies
+npm install
+
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
 ```
-
-2. Start a local server:
-```bash
-# Using Python
-python -m http.server 8000
-
-# OR using Node.js
-npx http-server -p 8000
-```
-
-3. Open your browser and navigate to:
-```
-http://localhost:8000
-```
-
-## 📊 Technology Stack
-
-- **Frontend**: Vanilla JavaScript (ES6+)
-- **Styling**: Custom CSS with modern design patterns
-- **Charts**: Chart.js for data visualization
-- **PDF Generation**: jsPDF for report exports
-- **Storage**: Browser localStorage for data persistence
-
-## 🏗️ Project Structure
-
-```
-CVP Analysis/
-├── index.html              # Main entry point
-├── app.js                  # Application initialization
-├── auth.js                 # Authentication logic
-├── styles.css              # Main stylesheet
-├── components.js           # Reusable UI components
-├── data-manager.js         # Data management and storage
-├── cvp-calculator.js       # CVP calculation engine
-├── forecast-engine.js      # Forecasting algorithms
-├── heatmap-engine.js       # Heatmap generation
-├── csv-handler.js          # CSV import/export
-├── settings-manager.js     # Application settings
-└── pages/
-    ├── dashboard.js        # Dashboard page
-    ├── products.js         # Product management
-    ├── sales.js            # Sales tracking
-    ├── cvp.js              # CVP analysis
-    ├── what-if.js          # Scenario analysis
-    ├── forecast.js         # Forecasting page
-    ├── heatmap.js          # Heatmap visualization
-    ├── reports.js          # Report generation
-    └── settings.js         # Settings page
-```
-
-## 📱 Browser Support
-
-- ✅ Chrome (recommended)
-- ✅ Firefox
-- ✅ Edge
-- ✅ Safari
-- ⚠️ IE11 (limited support)
-
-## 🔒 Data Privacy
-
-All data is stored locally in your browser using localStorage. No data is sent to external servers. Your business information remains completely private and secure.
-
-## 📖 User Guide
-
-### Getting Started
-
-1. **Login**: Use the default credentials or create a new account
-2. **Add Products**: Navigate to Products page and add your product catalog
-3. **Record Sales**: Enter sales transactions in the Sales page
-4. **Set Fixed Costs**: Configure your fixed costs in Settings
-5. **Analyze**: Use the CVP Calculator and What-If Analysis tools
-6. **Forecast**: Generate future projections in the Forecast page
-7. **Report**: Export professional reports for stakeholders
-
-### Key Concepts
-
-- **Break-Even Point**: The sales volume where total revenue equals total costs
-- **Contribution Margin**: Revenue minus variable costs
-- **Margin of Safety**: How much sales can drop before reaching break-even
-- **Operating Leverage**: The degree to which fixed costs are used in operations
-
-## 🛠️ Configuration
-
-The application uses LKR (Sri Lankan Rupees) as the default currency. To change this:
-
-1. Navigate to Settings
-2. Update currency preferences
-3. Changes apply across all pages and reports
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please examine the `ACTION_PLAN.md` or `IMPLEMENTATION_STATUS.md` to see current progress and planned features.
 
-## 📧 Support
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-For issues, questions, or suggestions, please open an issue on GitHub.
+## 📄 License
 
-## 🙏 Acknowledgments
-
-- Chart.js for beautiful data visualizations
-- jsPDF for PDF generation capabilities
-- The open-source community for inspiration and tools
+This project is licensed under the MIT License.
 
 ---
-
-**Built with ❤️ for better business intelligence**
+**Built for the Future of Business Intelligence**
