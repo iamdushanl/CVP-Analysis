@@ -288,29 +288,46 @@ const DashboardPage = {
             const fixedCosts = DataManager.getTotalFixedCosts();
             const dailyFixedCost = fixedCosts / 30;
 
+            // Generate last 30 days dates
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 30);
+
+            const allDates = [];
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                allDates.push(d.toISOString().split('T')[0]);
+            }
+
             if (sales.length === 0) {
                 // Show empty state
                 const ctx = document.getElementById('salesTrendChart');
                 if (ctx) {
-                    ctx.parentElement.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-muted);">No sales data available for the last 30 days</p>';
+                    // Even with empty sales, we can show the fixed cost line on the 30-day axis
+                    // to give the user better context than just "No Data"
+                    // But if there are ABSOLUTELY no sales ever, maybe empty state is better.
+                    // Let's stick to empty state if truly empty, but if we have partial data, we use the loop below.
                 }
-                return;
             }
 
+            // Map sales to dates
             const dailyRevenue = {};
             const dailyContribution = {};
 
-            // Aggregate by date
-            sales.forEach(sale => {
-                if (!dailyRevenue[sale.date]) {
-                    dailyRevenue[sale.date] = 0;
-                    dailyContribution[sale.date] = 0;
-                }
-                dailyRevenue[sale.date] += sale.totalAmount;
-                dailyContribution[sale.date] += sale.contribution;
+            // Initialize all dates with 0
+            allDates.forEach(date => {
+                dailyRevenue[date] = 0;
+                dailyContribution[date] = 0;
             });
 
-            const sortedDates = Object.keys(dailyRevenue).sort();
+            // Aggregate by date
+            sales.forEach(sale => {
+                if (dailyRevenue.hasOwnProperty(sale.date)) {
+                    dailyRevenue[sale.date] += sale.totalAmount;
+                    dailyContribution[sale.date] += sale.contribution;
+                }
+            });
+
+            const sortedDates = allDates; // Already sorted
             const revenues = sortedDates.map(date => dailyRevenue[date]);
 
             // Calculate daily profit (Contribution - Daily Fixed Cost)
@@ -482,17 +499,22 @@ const DashboardPage = {
             // Add current position marker
             const currentRevenue = avgSellingPrice * currentMonthlyUnits;
 
+            // Convert datasets to scatter format {x, y} for precise plotting
+            const formattedDatasets = chartData.datasets.map(ds => ({
+                ...ds,
+                data: ds.data.map((y, i) => ({ x: chartData.labels[i], y: y }))
+            }));
+
             Components.createChart('cvpBreakEvenChart', {
                 type: 'line',
                 data: {
-                    labels: chartData.labels,
                     datasets: [
-                        ...chartData.datasets,
+                        ...formattedDatasets,
                         {
                             label: 'Break-Even Point',
-                            data: chartData.labels.map(units => units === Math.round(breakEvenUnits) ? breakEvenRevenue : null),
+                            data: [{ x: breakEvenUnits, y: breakEvenRevenue }],
                             pointRadius: 10,
-                            pointBackgroundColor: 'rgb(234, 179, 8)',
+                            pointBackgroundColor: 'rgb(234, 179, 8)', // Yellow
                             pointBorderColor: '#fff',
                             pointBorderWidth: 2,
                             showLine: false,
@@ -500,7 +522,7 @@ const DashboardPage = {
                         },
                         {
                             label: 'Current Position (30-day)',
-                            data: chartData.labels.map(units => units === Math.round(currentMonthlyUnits) ? currentRevenue : null),
+                            data: [{ x: currentMonthlyUnits, y: currentRevenue }],
                             pointRadius: 10,
                             pointBackgroundColor: currentMonthlyUnits > breakEvenUnits ? 'rgb(16, 185, 129)' : 'rgb(239, 68, 68)',
                             pointBorderColor: '#fff',
@@ -528,7 +550,9 @@ const DashboardPage = {
                                     if (label) {
                                         label += ': ';
                                     }
-                                    label += Components.formatCurrency(context.parsed.y);
+                                    if (context.parsed.y !== null) {
+                                        label += Components.formatCurrency(context.parsed.y);
+                                    }
                                     return label;
                                 },
                                 afterLabel: function (context) {
@@ -555,7 +579,9 @@ const DashboardPage = {
                                     label: {
                                         display: true,
                                         content: 'Break-Even',
-                                        position: 'start'
+                                        position: 'start',
+                                        color: 'rgb(234, 179, 8)',
+                                        backgroundColor: 'rgba(255,255,255,0.8)'
                                     }
                                 }
                             }
@@ -573,6 +599,8 @@ const DashboardPage = {
                             }
                         },
                         x: {
+                            type: 'linear', // Use linear scale for precise x-axis plotting
+                            beginAtZero: true,
                             title: {
                                 display: true,
                                 text: 'Units Sold'
