@@ -5,7 +5,7 @@
 
 const ChatbotService = {
     // Default API key - fallback if not in settings
-    apiKey: 'AIzaSyCpdpG1a-rKEMSKwImxUImMQ7V-00LXrY4',
+    apiKey: 'AIzaSyDp9ioM_VGT6lLwfnwWcn4YrNhyi7kWlDk',
     conversationHistory: [],
     isInitialized: false,
     maxHistoryLength: 50,
