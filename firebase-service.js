@@ -178,6 +178,36 @@ const FirebaseService = {
             console.error(`❌ Error pulling ${collectionName}:`, error);
             return null;
         }
+    },
+
+    /**
+     * Subscribe to real-time updates for a collection
+     * @param {string} collectionName - name of the collection to listen to
+     * @param {function} callback - function to call with new data
+     * @returns {function} unsubscribe function
+     */
+    subscribeToCollection(collectionName, callback) {
+        if (!this.isInitialized) return () => { };
+
+        const user = this.auth.currentUser;
+        if (!user) return () => { };
+
+        try {
+            console.log(`🔌 Subscribing to ${collectionName}...`);
+            return this.db.collection('users').doc(user.uid)
+                .collection(collectionName).doc('data')
+                .onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const data = doc.data().items;
+                        callback(data);
+                    }
+                }, (error) => {
+                    console.error(`❌ Error in ${collectionName} listener:`, error);
+                });
+        } catch (error) {
+            console.error(`❌ Error setting up listener for ${collectionName}:`, error);
+            return () => { };
+        }
     }
 };
 

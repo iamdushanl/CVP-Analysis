@@ -17,6 +17,16 @@ const App = {
         console.log('✅ User authenticated');
         SettingsManager.initializeFromUser();
         DataManager.init();
+
+        // Start Real-time Sync
+        DataManager.startRealtimeSync();
+
+        // Listen for data updates
+        window.addEventListener('cvp-data-updated', (e) => {
+            console.log(`🔄 Data updated (${e.detail.type}), refreshing view...`);
+            this.refresh();
+        });
+
         this.setupNavigation();
         this.setupUserProfile();
         this.navigate('dashboard');

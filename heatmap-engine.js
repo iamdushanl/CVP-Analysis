@@ -114,25 +114,39 @@ const HeatmapEngine = {
 
     /**
      * Get color for profit value (diverging color scale)
+     * Positive = Green, Negative = Red, Zero = Yellow
      */
     getProfitColor(profit, minProfit, maxProfit) {
-        // Normalize profit to 0-1 scale
-        const range = maxProfit - minProfit;
-        if (range === 0) return '#gray-300';
-
-        const normalized = (profit - minProfit) / range;
-
-        // Diverging color scale: red (loss) -> yellow (breakeven) -> green (profit)
-        if (profit < 0) {
-            // Red scale for losses
-            const intensity = Math.min(1, Math.abs(profit) / Math.abs(minProfit));
-            return `rgb(${Math.round(239 * intensity + 255 * (1 - intensity))}, ${Math.round(68 * intensity + 255 * (1 - intensity))}, ${Math.round(68 * intensity + 255 * (1 - intensity))})`;
-        } else if (profit === 0) {
+        // Handle strictly zero case
+        if (Math.abs(profit) < 0.01) {
             return '#fbbf24'; // Yellow for break-even
+        }
+
+        if (profit > 0) {
+            // GREEN SCALE (0 -> Max Positive Profit)
+            // If we have no positive range (maxProfit <= 0), this shouldn't happen if profit > 0
+            // but for safety, we define the intensity based on profit itself vs maxProfit
+            const max = Math.max(maxProfit, profit, 1); // Avoid division by zero
+            const intensity = Math.min(1, profit / max);
+
+            // Interpolate White (255,255,255) to Green (16, 185, 129)
+            return `rgb(
+                 ${Math.round(255 + (16 - 255) * intensity)}, 
+                 ${Math.round(255 + (185 - 255) * intensity)}, 
+                 ${Math.round(255 + (129 - 255) * intensity)}
+             )`;
         } else {
-            // Green scale for profits
-            const intensity = Math.min(1, profit / maxProfit);
-            return `rgb(${Math.round(16 * intensity + 255 * (1 - intensity))}, ${Math.round(185 * intensity + 255 * (1 - intensity))}, ${Math.round(129 * intensity + 255 * (1 - intensity))})`;
+            // RED SCALE (Min Negative Profit -> 0)
+            const min = Math.min(minProfit, profit, -1); // Avoid division by zero
+            // Intensity: 0 near zero, 1 near min
+            const intensity = Math.min(1, Math.abs(profit / min));
+
+            // Interpolate White (255,255,255) to Red (239, 68, 68)
+            return `rgb(
+                ${Math.round(255 + (239 - 255) * intensity)}, 
+                ${Math.round(255 + (68 - 255) * intensity)}, 
+                ${Math.round(255 + (68 - 255) * intensity)}
+            )`;
         }
     },
 

@@ -3,126 +3,37 @@
 // Testing CRUD operations and data validation
 // ========================================
 
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+
+function loadScript(filename) {
+    const filePath = path.resolve(__dirname, '../' + filename);
+    let code = fs.readFileSync(filePath, 'utf8');
+    // Expose DataManager to global scope
+    if (filename === 'data-manager.js') {
+        code += '\nglobal.DataManager = DataManager;';
+    }
+    vm.runInThisContext(code);
+}
+
 describe('DataManager', () => {
-    let DataManager;
 
     beforeAll(() => {
-        // Mock DataManager
-        DataManager = {
-            generateUniqueId() {
-                return `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            },
-
-            normalizeDate(dateString) {
-                if (!dateString) return new Date().toISOString().split('T')[0];
-                const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-                if (!dateRegex.test(dateString)) {
-                    return new Date().toISOString().split('T')[0];
-                }
-                return dateString;
-            },
-
-            validateProduct(product) {
-                const errors = [];
-                if (!product.sku || product.sku.trim() === '') {
-                    errors.push('SKU is required');
-                }
-                if (!product.name || product.name.trim() === '') {
-                    errors.push('Product name is required');
-                }
-                if (typeof product.sellingPrice !== 'number' || product.sellingPrice < 0) {
-                    errors.push('Selling price must be a positive number');
-                }
-                if (typeof product.variableCost !== 'number' || product.variableCost < 0) {
-                    errors.push('Variable cost must be a positive number');
-                }
-                return errors;
-            },
-
-            validateSale(sale) {
-                const errors = [];
-                if (!sale.productId) {
-                    errors.push('Product ID is required');
-                }
-                if (typeof sale.quantity !== 'number' || sale.quantity <= 0) {
-                    errors.push('Quantity must be greater than 0');
-                }
-                if (typeof sale.unitPrice !== 'number' || sale.unitPrice < 0) {
-                    errors.push('Unit price must be a positive number');
-                }
-                return errors;
-            },
-
-            validateFixedCost(cost) {
-                const errors = [];
-                if (!cost.name || cost.name.trim() === '') {
-                    errors.push('Cost name is required');
-                }
-                if (typeof cost.amount !== 'number' || cost.amount < 0) {
-                    errors.push('Amount must be a positive number');
-                }
-                if (cost.frequency && !['daily', 'weekly', 'monthly', 'quarterly', 'yearly'].includes(cost.frequency)) {
-                    errors.push('Invalid frequency');
-                }
-                return errors;
-            },
-
-            getProducts() {
-                try {
-                    return JSON.parse(localStorage.getItem('cvp_products') || '[]');
-                } catch (error) {
-                    return [];
-                }
-            },
-
-            saveProducts(products) {
-                try {
-                    localStorage.setItem('cvp_products', JSON.stringify(products));
-                    return { success: true };
-                } catch (error) {
-                    return { success: false, error: error.message };
-                }
-            },
-
-            addProduct(product) {
-                try {
-                    const errors = this.validateProduct(product);
-                    if (errors.length > 0) {
-                        return { success: false, errors };
-                    }
-
-                    const products = this.getProducts();
-
-                    if (products.find(p => p.sku === product.sku)) {
-                        return { success: false, errors: [`SKU "${product.sku}" already exists`] };
-                    }
-
-                    product.id = this.generateUniqueId();
-                    product.createdAt = new Date().toISOString();
-                    products.push(product);
-
-                    this.saveProducts(products);
-                    return { success: true, product };
-                } catch (error) {
-                    return { success: false, errors: [error.message] };
-                }
-            },
-
-            getProductById(id) {
-                const products = this.getProducts();
-                return products.find(p => p.id === id);
-            },
-
-            deleteProduct(id) {
-                try {
-                    const products = this.getProducts().filter(p => p.id !== id);
-                    this.saveProducts(products);
-                    return { success: true };
-                } catch (error) {
-                    return { success: false, errors: [error.message] };
-                }
-            }
+        // Load the real DataManager
+        // Ensure dependecies (SettingsManager/FirebaseService) are handled or ignored
+        // DataManager uses FirebaseService if defined. We can leave it undefined or mock it.
+        global.FirebaseService = {
+            isInitialized: false,
+            subscribeToCollection: jest.fn(),
+            syncToCloud: jest.fn()
         };
+
+        global.SettingsManager = {
+            formatCurrency: (val) => val
+        };
+
+        loadScript('data-manager.js');
     });
 
     beforeEach(() => {
