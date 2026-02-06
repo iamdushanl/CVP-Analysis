@@ -1,9 +1,78 @@
-/**
- * Prismo Chatbot - Comprehensive Unit Tests
- * Tests for chatbot service, UI, and function calling
- */
 
-// Mock Data Manager
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+
+// Helper to load file into global scope
+function loadScript(filename) {
+    const filePath = path.resolve(__dirname, '../' + filename);
+    let code = fs.readFileSync(filePath, 'utf8');
+
+    // Naively expose the main object if it matches standard pattern
+    if (filename === 'chatbot-service.js') {
+        code += '\nglobal.ChatbotService = ChatbotService;';
+    }
+    if (filename === 'data-manager.js') { // If we were loading it
+        code += '\nglobal.DataManager = DataManager;';
+    }
+
+    vm.runInThisContext(code);
+}
+
+// Load dependencies
+// Mock DataManager first (since ChatbotService uses it)
+// We need to partial mock DataManager, but the file might overwrite our mock.
+// So we will load the real files but mock the methods we need if they rely on localStorage/Auth
+// For unit testing logic, it is better to Keep the Mock DataManager defined in the test file 
+// BUT ChatbotService is an object literal. We need to load the file.
+
+// Load ChatbotService (it is an object const ChatbotService = ...)
+loadScript('chatbot-service.js');
+// The file defines const ChatbotService. In strict mode or vm, const might not attach to global.
+// But vm.runInThisContext should work if it's top level.
+
+// However, because ChatbotService uses DataManager and SettingsManager, 
+// and `initialization` checks for them.
+// We must ensure they exist.
+
+// Mock Data Manager - We defined it in the test file, but loading the script might conflict?
+// No, the script uses `DataManager.getProducts()`. It expects `DataManager` to exist.
+// We already defined `mockDataManager` in the test file, but we need to assign it to global `DataManager`.
+global.DataManager = {
+    getProducts: () => [
+        { id: '1', name: 'Product A', price: 100, sellingPrice: 100, variableCost: 60, fixedCost: 2000, sales: 50, sku: 'PROD-001' },
+        { id: '2', name: 'Product B', price: 150, sellingPrice: 150, variableCost: 90, fixedCost: 3000, sales: 30, sku: 'PROD-002' }
+    ],
+    getSales: () => [],
+    getSalesLast30Days: () => [],
+    getSalesLastNDays: () => [],
+    getTotalFixedCosts: () => 5000,
+    getFixedCosts: () => [],
+    getProductById: (id) => ({ id, name: 'Product A', sellingPrice: 100, variableCost: 60, sku: 'PROD-001' })
+};
+
+global.SettingsManager = {
+    getSettings: () => ({}),
+    updateSettings: jest.fn()
+};
+
+global.CVP_KNOWLEDGE_BASE = {
+    formulas: {},
+    concepts: {},
+    getFormula: () => ({}),
+    getAllFormulaNames: () => [],
+    getConcept: () => ({}),
+    getAllConceptNames: () => []
+};
+
+global.ChatbotUI = {
+    init: jest.fn(),
+    render: jest.fn(),
+    renderInitialMessage: jest.fn(() => 'Hello Prismo'),
+    toggleChat: jest.fn(),
+    clearChat: jest.fn()
+};
+
 const mockDataManager = {
     getProducts: () => [
         { id: 1, name: 'Product A', price: 100, variableCost: 60, fixedCost: 2000, sales: 50 },
