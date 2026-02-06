@@ -169,9 +169,27 @@ const ForecastEngine = {
                 };
             }
 
-            dailyData[sale.date].quantity += sale.quantity;
-            dailyData[sale.date].revenue += sale.totalAmount;
-            dailyData[sale.date].contribution += sale.contribution;
+            // Robust data handling: Ensure numbers
+            let qty = Number(sale.quantity);
+            if (isNaN(qty)) {
+                console.error(`Invalid quantity found: ${sale.quantity} (Type: ${typeof sale.quantity}) in sale ${sale.id}`);
+                qty = 0;
+            }
+            const rev = Number(sale.totalAmount) || 0;
+            const cont = Number(sale.contribution) || 0;
+
+            if (typeof dailyData[sale.date].quantity !== 'number') {
+                console.error(`PRE-ADD ERROR: quantity is ${typeof dailyData[sale.date].quantity} for ${sale.date}`);
+            }
+
+            dailyData[sale.date].quantity += qty;
+            dailyData[sale.date].revenue += rev;
+            dailyData[sale.date].contribution += cont;
+
+            if (typeof dailyData[sale.date].quantity !== 'number') {
+                console.error(`POST-ADD ERROR: quantity BECAME ${typeof dailyData[sale.date].quantity} after adding ${qty} (type ${typeof qty}) for ${sale.date}`);
+                console.error(`Orig sale qty: ${sale.quantity}`);
+            }
         });
 
         return dailyData;
