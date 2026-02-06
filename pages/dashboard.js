@@ -471,12 +471,17 @@ const DashboardPage = {
             const avgVariableCost = totalUnits > 0 ? totalVariableCost / totalUnits : 0;
             const avgContribution = avgSellingPrice - avgVariableCost;
 
-            if (avgSellingPrice === 0 || avgVariableCost === 0) {
+            if (avgSellingPrice === 0) {
                 const ctx = document.getElementById('cvpBreakEvenChart');
                 if (ctx) {
-                    ctx.parentElement.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-muted);">Insufficient data for CVP analysis</p>';
+                    ctx.parentElement.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-muted);">Insufficient revenue data for CVP analysis</p>';
                 }
                 return;
+            }
+
+            // Warn if variable cost is 0 (might be legitimate or missing data)
+            if (avgVariableCost === 0) {
+                console.warn('CVP Analysis: Average Variable Cost is 0. This might be due to missing product data or 100% margin products.');
             }
 
             // Calculate break-even point
