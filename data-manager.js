@@ -29,6 +29,15 @@ const DataManager = {
       return new Date().toISOString().split('T')[0];
     }
 
+    // Validate actual date existence (e.g. reject 2024-02-30 or 2024-13-01)
+    const date = new Date(dateString);
+    const isValidDate = !isNaN(date.getTime()) && date.toISOString().split('T')[0] === dateString;
+
+    if (!isValidDate) {
+      console.warn(`Invalid date value: ${dateString}, using today's date`);
+      return new Date().toISOString().split('T')[0];
+    }
+
     return dateString;
   },
 
@@ -132,6 +141,46 @@ const DataManager = {
   },
 
   // ============================================
+  // REAL-TIME SYNC
+  // ============================================
+
+  /**
+   * Start listening for real-time updates from Firestore
+   */
+  startRealtimeSync() {
+    if (typeof FirebaseService === 'undefined' || !FirebaseService.isInitialized) {
+      console.warn('⚠️ Firebase not ready for real-time sync');
+      return;
+    }
+
+    console.log('🔄 Starting real-time sync...');
+
+    // Subscribe to Products
+    FirebaseService.subscribeToCollection('products', (data) => {
+      if (data && Array.isArray(data)) {
+        console.log('📥 Received products update from cloud');
+        this.saveProducts(data, true); // true = fromCloud
+      }
+    });
+
+    // Subscribe to Sales
+    FirebaseService.subscribeToCollection('sales', (data) => {
+      if (data && Array.isArray(data)) {
+        console.log('📥 Received sales update from cloud');
+        this.saveSales(data, true);
+      }
+    });
+
+    // Subscribe to Fixed Costs
+    FirebaseService.subscribeToCollection('fixed_costs', (data) => {
+      if (data && Array.isArray(data)) {
+        console.log('📥 Received fixed costs update from cloud');
+        this.saveFixedCosts(data, true);
+      }
+    });
+  },
+
+  // ============================================
   // PRODUCTS
   // ============================================
 
@@ -144,14 +193,23 @@ const DataManager = {
     }
   },
 
-  saveProducts(products) {
+  saveProducts(products, fromCloud = false) {
     try {
-      localStorage.setItem('cvp_products', JSON.stringify(products));
+      // Check if data actually changed to avoid unnecessary re-renders
+      const currentData = localStorage.getItem('cvp_products');
+      const newData = JSON.stringify(products);
 
-      // Trigger Cloud Sync
-      if (typeof FirebaseService !== 'undefined' && FirebaseService.isInitialized) {
+      if (currentData === newData) return { success: true };
+
+      localStorage.setItem('cvp_products', newData);
+
+      // Trigger Cloud Sync only if this change originated locally
+      if (!fromCloud && typeof FirebaseService !== 'undefined' && FirebaseService.isInitialized) {
         FirebaseService.syncToCloud('products', products);
       }
+
+      // Notify App to refresh UI
+      window.dispatchEvent(new CustomEvent('cvp-data-updated', { detail: { type: 'products' } }));
 
       return { success: true };
     } catch (error) {
@@ -179,7 +237,7 @@ const DataManager = {
       product.createdAt = new Date().toISOString();
       products.push(product);
 
-      this.saveProducts(products);
+      this.saveProducts(products); // Local save -> Sync to Cloud
       return { success: true, product };
     } catch (error) {
       console.error('Error adding product:', error);
@@ -286,14 +344,23 @@ const DataManager = {
     }
   },
 
-  saveSales(sales) {
+  saveSales(sales, fromCloud = false) {
     try {
-      localStorage.setItem('cvp_sales', JSON.stringify(sales));
+      // Check if data actually changed
+      const currentData = localStorage.getItem('cvp_sales');
+      const newData = JSON.stringify(sales);
 
-      // Trigger Cloud Sync
-      if (typeof FirebaseService !== 'undefined' && FirebaseService.isInitialized) {
+      if (currentData === newData) return { success: true };
+
+      localStorage.setItem('cvp_sales', newData);
+
+      // Trigger Cloud Sync only if locally initiated
+      if (!fromCloud && typeof FirebaseService !== 'undefined' && FirebaseService.isInitialized) {
         FirebaseService.syncToCloud('sales', sales);
       }
+
+      // Notify App
+      window.dispatchEvent(new CustomEvent('cvp-data-updated', { detail: { type: 'sales' } }));
 
       return { success: true };
     } catch (error) {
@@ -394,14 +461,23 @@ const DataManager = {
     }
   },
 
-  saveFixedCosts(costs) {
+  saveFixedCosts(costs, fromCloud = false) {
     try {
-      localStorage.setItem('cvp_fixed_costs', JSON.stringify(costs));
+      // Check if data actually changed
+      const currentData = localStorage.getItem('cvp_fixed_costs');
+      const newData = JSON.stringify(costs);
 
-      // Trigger Cloud Sync
-      if (typeof FirebaseService !== 'undefined' && FirebaseService.isInitialized) {
+      if (currentData === newData) return { success: true };
+
+      localStorage.setItem('cvp_fixed_costs', newData);
+
+      // Trigger Cloud Sync only if locally initiated
+      if (!fromCloud && typeof FirebaseService !== 'undefined' && FirebaseService.isInitialized) {
         FirebaseService.syncToCloud('fixed_costs', costs);
       }
+
+      // Notify App
+      window.dispatchEvent(new CustomEvent('cvp-data-updated', { detail: { type: 'fixed_costs' } }));
 
       return { success: true };
     } catch (error) {
