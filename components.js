@@ -184,7 +184,10 @@ const Components = {
     }
 
     // Fallback if SettingsManager not loaded
-    return 'Rs. ' + parseFloat(amount).toLocaleString('en-US', {
+    const num = parseFloat(amount);
+    if (isNaN(num)) return 'Rs. 0.00';
+
+    return 'Rs. ' + num.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
@@ -199,7 +202,10 @@ const Components = {
     }
 
     // Fallback
-    return parseFloat(num).toLocaleString('en-US', {
+    const parsedNum = parseFloat(num);
+    if (isNaN(parsedNum)) return '0';
+
+    return parsedNum.toLocaleString('en-US', {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals
     });
