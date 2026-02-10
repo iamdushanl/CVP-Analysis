@@ -207,30 +207,36 @@ const SalesPage = {
     },
 
     /**
-     * Export sales to CSV
+     * Export sales to CSV with error handling
+     * Fixed: Added try-catch and proper user feedback
      */
     exportCSV() {
-        const sales = DataManager.getSales();
+        try {
+            const sales = DataManager.getSales();
 
-        if (sales.length === 0) {
-            Components.showToast('No sales to export', 'error');
-            return;
+            if (sales.length === 0) {
+                Components.showToast('No sales to export', 'error');
+                return;
+            }
+
+            const csvData = sales.map(s => ({
+                'Date': s.date,
+                'Product Name': s.productName,
+                'Quantity': s.quantity,
+                'Unit Price': s.unitPrice,
+                'Total Amount': s.totalAmount,
+                'Contribution': s.contribution
+            }));
+
+            const csv = CSVHandler.arrayToCSV(csvData);
+            const filename = `sales_export_${new Date().toISOString().split('T')[0]}.csv`;
+            CSVHandler.downloadCSV(filename, csv);
+
+            Components.showToast(`✅ Exported ${sales.length} sales records successfully`, 'success');
+        } catch (error) {
+            console.error('Error exporting sales:', error);
+            Components.showToast('❌ Failed to export sales. Please try again.', 'error');
         }
-
-        const csvData = sales.map(s => ({
-            'Date': s.date,
-            'Product Name': s.productName,
-            'Quantity': s.quantity,
-            'Unit Price': s.unitPrice,
-            'Total Amount': s.totalAmount,
-            'Contribution': s.contribution
-        }));
-
-        const csv = CSVHandler.arrayToCSV(csvData);
-        const filename = `sales_export_${new Date().toISOString().split('T')[0]}.csv`;
-        CSVHandler.downloadCSV(filename, csv);
-
-        Components.showToast(`Exported ${sales.length} sales records`, 'success');
     },
 
     /**

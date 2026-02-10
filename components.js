@@ -245,7 +245,8 @@ const Components = {
   },
 
   /**
-   * Get form data
+   * Get form data with proper number validation
+   * Fixed: Correctly validates numeric strings before parsing
    */
   getFormData(formId) {
     const form = document.getElementById(formId);
@@ -255,9 +256,11 @@ const Components = {
     const data = {};
 
     for (let [key, value] of formData.entries()) {
-      // Convert numeric fields
-      if (value && !isNaN(value) && value.trim() !== '') {
-        data[key] = parseFloat(value);
+      // Proper numeric validation
+      const trimmedValue = value ? value.toString().trim() : '';
+
+      if (trimmedValue !== '' && !isNaN(Number(trimmedValue))) {
+        data[key] = parseFloat(trimmedValue);
       } else {
         data[key] = value;
       }
@@ -384,19 +387,36 @@ const Components = {
   },
 
   /**
-   * Handle logout
+   * Handle logout with custom confirmation modal
+   * Fixed: Uses custom modal instead of browser confirm() for consistency
    */
   handleLogout() {
-    if (confirm('Are you sure you want to logout?')) {
-      AuthManager.logout();
-      this.closeModal();
-      // Also close dropdown if open
-      const dropdown = document.getElementById('userProfileDropdown');
-      if (dropdown) dropdown.classList.remove('active');
+    // Close profile dropdown first
+    const dropdown = document.getElementById('userProfileDropdown');
+    if (dropdown) dropdown.classList.remove('active');
 
-      location.reload();
-    }
-  }
+    // Show custom confirmation modal
+    this.showModal(`
+      <div style="padding: var(--space-6); text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: var(--space-4);">👋</div>
+        <h3 style="font-size: var(--text-xl); font-weight: 600; margin-bottom: var(--space-4);">Logout Confirmation</h3>
+        <p style="color: var(--text-secondary); margin-bottom: var(--space-6);">Are you sure you want to logout?</p>
+        <div style="display: flex; gap: var(--space-3); justify-content: center;">
+          <button class="btn btn-secondary" onclick="Components.closeModal();">Cancel</button>
+          <button class="btn btn-danger" onclick="Components.confirmLogout();">Logout</button>
+        </div>
+      </div>
+    `);
+  },
+
+  /**
+   * Confirm and execute logout
+   */
+  async confirmLogout() {
+    this.closeModal();
+    await AuthManager.logout();
+    location.reload();
+  },
 };
 
 // Add CSS for toast slideOut animation

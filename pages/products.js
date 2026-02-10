@@ -195,29 +195,35 @@ const ProductsPage = {
     },
 
     /**
-     * Export products to CSV
+     * Export products to CSV with error handling
+     * Fixed: Added try-catch and proper user feedback
      */
     exportCSV() {
-        const products = DataManager.getProducts();
+        try {
+            const products = DataManager.getProducts();
 
-        if (products.length === 0) {
-            Components.showToast('No products to export', 'error');
-            return;
+            if (products.length === 0) {
+                Components.showToast('No products to export', 'error');
+                return;
+            }
+
+            const csvData = products.map(p => ({
+                'SKU': p.sku,
+                'Name': p.name,
+                'Category': p.category || '',
+                'Selling Price': p.sellingPrice,
+                'Variable Cost': p.variableCost
+            }));
+
+            const csv = CSVHandler.arrayToCSV(csvData);
+            const filename = `products_export_${new Date().toISOString().split('T')[0]}.csv`;
+            CSVHandler.downloadCSV(filename, csv);
+
+            Components.showToast(`✅ Exported ${products.length} products successfully`, 'success');
+        } catch (error) {
+            console.error('Error exporting products:', error);
+            Components.showToast('❌ Failed to export products. Please try again.', 'error');
         }
-
-        const csvData = products.map(p => ({
-            'SKU': p.sku,
-            'Name': p.name,
-            'Category': p.category || '',
-            'Selling Price': p.sellingPrice,
-            'Variable Cost': p.variableCost
-        }));
-
-        const csv = CSVHandler.arrayToCSV(csvData);
-        const filename = `products_export_${new Date().toISOString().split('T')[0]}.csv`;
-        CSVHandler.downloadCSV(filename, csv);
-
-        Components.showToast(`Exported ${products.length} products`, 'success');
     },
 
     /**

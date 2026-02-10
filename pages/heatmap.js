@@ -3,12 +3,12 @@
 // ========================================
 
 const HeatmapPage = {
-    selectedProductId: null,
+  selectedProductId: null,
 
-    render() {
-        const products = DataManager.getProducts();
+  render() {
+    const products = DataManager.getProducts();
 
-        return `
+    return `
       <div class="mb-6">
         <h2 style="font-size: var(--text-2xl); font-weight: 600;">Profit Sensitivity Heatmap</h2>
         <p style="color: var(--text-secondary); margin-top: var(--space-2);">
@@ -52,41 +52,41 @@ const HeatmapPage = {
         <p style="font-size: var(--text-lg);">Select a product to generate the profit sensitivity heatmap</p>
       </div>
     `;
-    },
+  },
 
-    generateHeatmap(customRanges = null) {
-        const productId = document.getElementById('heatmapProductSelect').value;
+  generateHeatmap(customRanges = null) {
+    const productId = document.getElementById('heatmapProductSelect').value;
 
-        if (!productId) {
-            Components.showToast('Please select a product', 'error');
-            return;
-        }
+    if (!productId) {
+      Components.showToast('Please select a product', 'error');
+      return;
+    }
 
-        this.selectedProductId = productId;
+    this.selectedProductId = productId;
 
-        const priceRange = customRanges?.price || { min: -50, max: 50, step: 10 };
-        const volumeRange = customRanges?.volume || { min: -50, max: 200, step: 25 };
+    const priceRange = customRanges?.price || { min: -50, max: 50, step: 10 };
+    const volumeRange = customRanges?.volume || { min: -50, max: 200, step: 25 };
 
-        const heatmapData = HeatmapEngine.generateProfitMatrix(productId, priceRange, volumeRange);
+    const heatmapData = HeatmapEngine.generateProfitMatrix(productId, priceRange, volumeRange);
 
-        if (!heatmapData) {
-            Components.showToast('Failed to generate heatmap', 'error');
-            return;
-        }
+    if (!heatmapData) {
+      Components.showToast('Failed to generate heatmap', 'error');
+      return;
+    }
 
-        this.renderHeatmap(heatmapData);
+    this.renderHeatmap(heatmapData);
 
-        document.getElementById('heatmapContainer').style.display = 'block';
-        document.getElementById('heatmapPlaceholder').style.display = 'none';
-        document.getElementById('exportHeatmapBtn').disabled = false;
-    },
+    document.getElementById('heatmapContainer').style.display = 'block';
+    document.getElementById('heatmapPlaceholder').style.display = 'none';
+    document.getElementById('exportHeatmapBtn').disabled = false;
+  },
 
-    renderHeatmap(data) {
-        const { matrix, pricePoints, volumePoints, basePrice, baseVolume, product } = data;
-        const { min, max } = HeatmapEngine.getProfitRange(matrix);
+  renderHeatmap(data) {
+    const { matrix, pricePoints, volumePoints, basePrice, baseVolume, product } = data;
+    const { min, max } = HeatmapEngine.getProfitRange(matrix);
 
-        // Render legend
-        const legendHtml = `
+    // Render legend
+    const legendHtml = `
       <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-4); background: var(--gray-50); border-radius: var(--radius-md);">
         <div>
           <strong>Base Price:</strong> ${Components.formatCurrency(basePrice)} | 
@@ -109,29 +109,29 @@ const HeatmapPage = {
         </div>
       </div>
     `;
-        document.getElementById('heatmapLegend').innerHTML = legendHtml;
+    document.getElementById('heatmapLegend').innerHTML = legendHtml;
 
-        // Render heatmap grid
-        let gridHtml = '<table style="width: 100%; border-collapse: separate; border-spacing: 2px;">';
+    // Render heatmap grid
+    let gridHtml = '<table style="width: 100%; border-collapse: separate; border-spacing: 2px;">';
 
-        // Header row
-        gridHtml += '<thead><tr><th style="padding: var(--space-3); text-align: center; font-weight: 600; background: var(--gray-100);">Volume \\ Price</th>';
-        pricePoints.forEach(pricePct => {
-            gridHtml += `<th style="padding: var(--space-3); text-align: center; font-weight: 600; font-size: var(--text-xs); background: var(--gray-100);">${pricePct > 0 ? '+' : ''}${pricePct}%</th>`;
-        });
-        gridHtml += '</tr></thead><tbody>';
+    // Header row
+    gridHtml += '<thead><tr><th style="padding: var(--space-3); text-align: center; font-weight: 600; background: var(--gray-100);">Volume \\ Price</th>';
+    pricePoints.forEach(pricePct => {
+      gridHtml += `<th style="padding: var(--space-3); text-align: center; font-weight: 600; font-size: var(--text-xs); background: var(--gray-100);">${pricePct > 0 ? '+' : ''}${pricePct}%</th>`;
+    });
+    gridHtml += '</tr></thead><tbody>';
 
-        // Data rows
-        matrix.forEach((row, rowIdx) => {
-            const volumePct = volumePoints[rowIdx];
-            gridHtml += `<tr><td style="padding: var(--space-3); text-align: center; font-weight: 600; font-size: var(--text-xs); background: var(--gray-100);">${volumePct > 0 ? '+' : ''}${volumePct}%</td>`;
+    // Data rows
+    matrix.forEach((row, rowIdx) => {
+      const volumePct = volumePoints[rowIdx];
+      gridHtml += `<tr><td style="padding: var(--space-3); text-align: center; font-weight: 600; font-size: var(--text-xs); background: var(--gray-100);">${volumePct > 0 ? '+' : ''}${volumePct}%</td>`;
 
-            row.forEach(cell => {
-                const color = HeatmapEngine.getProfitColor(cell.profit, min, max);
-                const isBase = cell.pricePercent === 0 && cell.volumePercent === 0;
-                const borderStyle = isBase ? 'border: 3px solid var(--primary-600);' : '';
+      row.forEach(cell => {
+        const color = HeatmapEngine.getProfitColor(cell.profit, min, max);
+        const isBase = cell.pricePercent === 0 && cell.volumePercent === 0;
+        const borderStyle = isBase ? 'border: 3px solid var(--primary-600);' : '';
 
-                gridHtml += `
+        gridHtml += `
           <td 
             style="
               padding: var(--space-3);
@@ -148,21 +148,21 @@ const HeatmapPage = {
             onmouseout="this.style.transform='scale(1)'; this.style.zIndex='1';"
             title="Price: ${Components.formatCurrency(cell.price)} | Volume: ${Math.round(cell.volume)} | Profit: ${Components.formatCurrency(cell.profit)}"
           >
-            ${Components.formatCurrency(cell.profit, true)}
+            ${Components.formatCurrency(cell.profit)}
           </td>
         `;
-            });
+      });
 
-            gridHtml += '</tr>';
-        });
+      gridHtml += '</tr>';
+    });
 
-        gridHtml += '</tbody></table>';
-        document.getElementById('heatmapGrid').innerHTML = gridHtml;
+    gridHtml += '</tbody></table>';
+    document.getElementById('heatmapGrid').innerHTML = gridHtml;
 
-        // Find and display optimal point
-        const optimal = HeatmapEngine.findOptimalPoint(data);
-        if (optimal) {
-            const optimalHtml = `
+    // Find and display optimal point
+    const optimal = HeatmapEngine.findOptimalPoint(data);
+    if (optimal) {
+      const optimalHtml = `
         <div style="padding: var(--space-6); background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(14, 165, 233, 0.1)); border-radius: var(--radius-lg); border-left: 4px solid var(--success-600);">
           <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);">
             <span style="font-size: var(--text-2xl);">🎯</span>
@@ -187,12 +187,12 @@ const HeatmapPage = {
           </div>
         </div>
       `;
-            document.getElementById('optimalPoint').innerHTML = optimalHtml;
-        }
-    },
+      document.getElementById('optimalPoint').innerHTML = optimalHtml;
+    }
+  },
 
-    showCustomRanges() {
-        const modalContent = `
+  showCustomRanges() {
+    const modalContent = `
       <form id="customRangesForm">
         <h4 style="margin-bottom: var(--space-4);">Price Variation Range</h4>
         <div class="grid-3 mb-4">
@@ -210,50 +210,50 @@ const HeatmapPage = {
       </form>
     `;
 
-        Components.showModal('Custom Heatmap Ranges', modalContent, [
-            {
-                label: 'Generate Heatmap',
-                class: 'btn-primary',
-                onClick: 'HeatmapPage.applyCustomRanges()'
-            }
-        ]);
-    },
+    Components.showModal('Custom Heatmap Ranges', modalContent, [
+      {
+        label: 'Generate Heatmap',
+        class: 'btn-primary',
+        onClick: 'HeatmapPage.applyCustomRanges()'
+      }
+    ]);
+  },
 
-    applyCustomRanges() {
-        const customRanges = {
-            price: {
-                min: parseInt(document.getElementById('priceMin').value),
-                max: parseInt(document.getElementById('priceMax').value),
-                step: parseInt(document.getElementById('priceStep').value)
-            },
-            volume: {
-                min: parseInt(document.getElementById('volumeMin').value),
-                max: parseInt(document.getElementById('volumeMax').value),
-                step: parseInt(document.getElementById('volumeStep').value)
-            }
-        };
+  applyCustomRanges() {
+    const customRanges = {
+      price: {
+        min: parseInt(document.getElementById('priceMin').value),
+        max: parseInt(document.getElementById('priceMax').value),
+        step: parseInt(document.getElementById('priceStep').value)
+      },
+      volume: {
+        min: parseInt(document.getElementById('volumeMin').value),
+        max: parseInt(document.getElementById('volumeMax').value),
+        step: parseInt(document.getElementById('volumeStep').value)
+      }
+    };
 
-        Components.closeModal();
-        this.generateHeatmap(customRanges);
-    },
+    Components.closeModal();
+    this.generateHeatmap(customRanges);
+  },
 
-    exportHeatmap() {
-        if (!this.selectedProductId) {
-            Components.showToast('No heatmap to export', 'error');
-            return;
-        }
-
-        const heatmapData = HeatmapEngine.generateProfitMatrix(this.selectedProductId);
-        const csv = HeatmapEngine.exportHeatmapData(heatmapData);
-
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `heatmap_${heatmapData.product.name}_${new Date().toISOString().split('T')[0]}.csv`;
-        link.click();
-        URL.revokeObjectURL(url);
-
-        Components.showToast('Heatmap exported successfully', 'success');
+  exportHeatmap() {
+    if (!this.selectedProductId) {
+      Components.showToast('No heatmap to export', 'error');
+      return;
     }
+
+    const heatmapData = HeatmapEngine.generateProfitMatrix(this.selectedProductId);
+    const csv = HeatmapEngine.exportHeatmapData(heatmapData);
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `heatmap_${heatmapData.product.name}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    Components.showToast('Heatmap exported successfully', 'success');
+  }
 };
