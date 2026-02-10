@@ -8,18 +8,21 @@ const App = {
     init() {
         console.log('🚀 CVP Intelligence - Initializing...');
 
-        if (!AuthManager.isAuthenticated()) {
-            console.log('⛔ Not authenticated - showing login page');
-            AuthPages.showLoginPage();
-            return;
+        const isAuthenticated = AuthManager.isAuthenticated();
+
+        if (!isAuthenticated) {
+            console.log('👤 Guest mode - initializing with sample data');
+            // Initialize as guest
+            this.initializeGuestMode();
+        } else {
+            console.log('✅ User authenticated');
+            SettingsManager.initializeFromUser();
+            // Start Real-time Sync for authenticated users only
+            DataManager.startRealtimeSync();
         }
 
-        console.log('✅ User authenticated');
-        SettingsManager.initializeFromUser();
+        // Initialize data (works for both guest and authenticated)
         DataManager.init();
-
-        // Start Real-time Sync
-        DataManager.startRealtimeSync();
 
         // Listen for data updates
         window.addEventListener('cvp-data-updated', (e) => {
@@ -35,6 +38,23 @@ const App = {
         this.initializeChatbot();
 
         console.log('✅ Application ready');
+    },
+
+    initializeGuestMode() {
+        console.log('🎭 Setting up guest mode...');
+
+        // Mark as guest session
+        sessionStorage.setItem('cvp_guest_mode', 'true');
+
+        // Set guest user info
+        const guestUser = {
+            name: 'Guest User',
+            email: 'guest@demo.local',
+            isGuest: true
+        };
+        sessionStorage.setItem('cvp_current_user', JSON.stringify(guestUser));
+
+        console.log('✅ Guest mode initialized with sample data');
     },
 
     setupNavigation() {
@@ -57,6 +77,13 @@ const App = {
 
             const userAvatar = userMenu.querySelector('.user-avatar');
             if (userAvatar) {
+                // Update avatar for guest mode
+                const isGuest = sessionStorage.getItem('cvp_guest_mode') === 'true';
+                if (isGuest) {
+                    userAvatar.textContent = '👤';
+                    userAvatar.title = 'Guest Mode - Login to sync data';
+                }
+
                 userAvatar.addEventListener('click', (e) => {
                     e.stopPropagation();
                     Components.toggleUserProfileDropdown();

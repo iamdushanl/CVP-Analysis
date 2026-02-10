@@ -282,6 +282,36 @@ const Components = {
    * Render User Profile Dropdown
    */
   renderUserProfileDropdown() {
+    const isGuest = sessionStorage.getItem('cvp_guest_mode') === 'true';
+
+    if (isGuest) {
+      // Guest mode dropdown
+      const guestUser = JSON.parse(sessionStorage.getItem('cvp_current_user') || '{}');
+      const initials = AuthManager.getAvatarInitials(guestUser.name || 'Guest');
+
+      return `
+        <div class="profile-dropdown" id="userProfileDropdown">
+          <div class="dropdown-header">
+            <div class="dropdown-avatar">${initials}</div>
+            <div class="dropdown-name">${guestUser.name || 'Guest User'}</div>
+            <div class="dropdown-email">${guestUser.email || 'guest@demo.local'}</div>
+            <div style="color: var(--primary-color); font-size: 0.75rem; margin-top: 4px;">
+              🎭 Guest Mode - Exploring with sample data
+            </div>
+          </div>
+          <div class="dropdown-menu">
+            <button class="dropdown-item" onclick="sessionStorage.clear(); AuthPages.showLoginPage()">
+              <span class="dropdown-icon">🔐</span> Login to Save Your Data
+            </button>
+            <button class="dropdown-item" onclick="sessionStorage.clear(); AuthPages.showRegisterPage()">
+              <span class="dropdown-icon">✨</span> Create Account
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Authenticated user dropdown
     const user = AuthManager.getCurrentUser();
     if (!user) return '';
 
