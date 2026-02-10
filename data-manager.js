@@ -13,7 +13,15 @@ const DataManager = {
    * Prevents ID collision issues
    */
   generateUniqueId() {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Use crypto.randomUUID if available (modern browsers)
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+
+    // Fallback: timestamp + random string to prevent collisions
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 11);
+    return `${timestamp}-${randomStr}`;
   },
 
   /**
