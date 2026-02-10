@@ -98,7 +98,7 @@ const ReportsPage = {
     Components.showToast(`Generating colorful ${this.getPeriodLabel()} professional analytics report...`, 'info');
 
     try {
-      const { jsPDF } = window.jspdf;
+      const jsPDF = window.jsPDF;
       const pdf = new jsPDF('p', 'mm', 'a4');
 
       const pageWidth = pdf.internal.pageSize.getWidth();
