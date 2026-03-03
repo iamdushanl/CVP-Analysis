@@ -41,7 +41,28 @@ const AuthManager = {
     },
 
     isAuthenticated() {
-        return !!this.getCurrentUser();
+        const localUser = this.getCurrentUser();
+        if (localUser) return true;
+
+        const firebaseUser = FirebaseService?.auth?.currentUser;
+        if (firebaseUser) {
+            this.setCurrentUser({
+                uid: firebaseUser.uid,
+                id: firebaseUser.uid,
+                name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+                email: firebaseUser.email || '',
+                role: 'Admin',
+                created_at: new Date().toISOString(),
+                preferences: {
+                    currency: 'LKR',
+                    dark_mode: false,
+                    date_format: 'DD-MM-YYYY'
+                }
+            });
+            return true;
+        }
+
+        return false;
     },
 
     getAvatarInitials(user = null) {
@@ -285,6 +306,32 @@ const AuthManager = {
         }
 
         return { success: true };
+    },
+
+    async hydrateSessionFromFirebase() {
+        if (this.getCurrentUser()) {
+            return true;
+        }
+
+        const firebaseReady = await this.ensureFirebaseReady();
+        if (!firebaseReady) {
+            return false;
+        }
+
+        try {
+            const redirectResult = await FirebaseService.completeRedirectSignIn?.();
+            const firebaseUser = redirectResult?.user || FirebaseService?.auth?.currentUser;
+
+            if (!firebaseUser) {
+                return false;
+            }
+
+            await this.loginWithFirebase(firebaseUser);
+            return true;
+        } catch (error) {
+            console.warn('⚠️ Unable to hydrate session from Firebase:', error);
+            return false;
+        }
     }
 };
 

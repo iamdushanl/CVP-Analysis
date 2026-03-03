@@ -5,8 +5,12 @@
 const App = {
     currentPage: 'dashboard',
 
-    init() {
+    async init() {
         console.log('🚀 CVP Intelligence - Initializing...');
+
+        if (typeof AuthManager?.hydrateSessionFromFirebase === 'function') {
+            await AuthManager.hydrateSessionFromFirebase();
+        }
 
         if (!AuthManager.isAuthenticated()) {
             console.log('⛔ Not authenticated - showing login page');

@@ -290,6 +290,12 @@ const AuthPages = {
 
     try {
       const result = await FirebaseService.signInWithGoogle();
+
+      if (result.redirect) {
+        btn.innerHTML = 'Redirecting...';
+        return;
+      }
+
       if (result.success) {
         // Now sync with local AuthManager
         await AuthManager.loginWithFirebase(result.user);
@@ -298,7 +304,19 @@ const AuthPages = {
       }
     } catch (e) {
       console.error('Social Login Error:', e);
-      alert('Google Login failed. Make sure you have enabled Google Auth in your Firebase console.');
+
+      let message = 'Google Login failed. Please try again.';
+      if (e?.code === 'auth/unauthorized-domain') {
+        message = 'This domain is not authorized in Firebase Auth. Add it in Firebase Console → Authentication → Settings → Authorized domains.';
+      } else if (e?.code === 'auth/configuration-not-ready') {
+        message = 'Firebase is not configured correctly. Please verify firebase-config.js and project settings.';
+      } else if (e?.code === 'auth/popup-blocked') {
+        message = 'Popup was blocked by your browser. Allow popups for this site and try again.';
+      } else if (e?.code === 'auth/operation-not-allowed') {
+        message = 'Google provider is disabled in Firebase Authentication. Enable Google Sign-In in your Firebase console.';
+      }
+
+      alert(message);
       btn.innerHTML = originalHTML;
       btn.style.pointerEvents = 'all';
     }

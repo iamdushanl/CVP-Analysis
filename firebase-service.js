@@ -92,7 +92,17 @@ const FirebaseService = {
 
     async signInWithGoogle() {
         try {
+            if (!this.isInitialized) {
+                const initialized = await this.init();
+                if (!initialized) {
+                    const error = new Error('Firebase is not configured correctly');
+                    error.code = 'auth/configuration-not-ready';
+                    throw error;
+                }
+            }
+
             const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
             const result = await this.auth.signInWithPopup(provider);
             const user = result.user;
 
@@ -115,8 +125,51 @@ const FirebaseService = {
 
             return { success: true, user };
         } catch (error) {
+            const fallbackCodes = [
+                'auth/popup-blocked',
+                'auth/popup-closed-by-user',
+                'auth/cancelled-popup-request',
+                'auth/operation-not-supported-in-this-environment'
+            ];
+
+            if (fallbackCodes.includes(error?.code)) {
+                try {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    provider.setCustomParameters({ prompt: 'select_account' });
+                    await this.auth.signInWithRedirect(provider);
+                    return { success: true, redirect: true };
+                } catch (redirectError) {
+                    console.error('❌ Google redirect sign-in error:', redirectError);
+                    throw redirectError;
+                }
+            }
+
             console.error('❌ Google Sign-In error:', error);
             throw error;
+        }
+    },
+
+    async completeRedirectSignIn() {
+        if (!this.isInitialized) {
+            const initialized = await this.init();
+            if (!initialized) return { success: false, user: null };
+        }
+
+        try {
+            const result = await this.auth.getRedirectResult();
+
+            if (result?.user) {
+                return { success: true, user: result.user, fromRedirect: true };
+            }
+
+            if (this.auth.currentUser) {
+                return { success: true, user: this.auth.currentUser, fromRedirect: false };
+            }
+
+            return { success: false, user: null };
+        } catch (error) {
+            console.error('❌ Failed to complete redirect sign-in:', error);
+            return { success: false, user: null, error };
         }
     },
 
