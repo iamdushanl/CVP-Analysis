@@ -197,10 +197,14 @@ const FirebaseService = {
             return this.db.collection('users').doc(user.uid)
                 .collection(collectionName).doc('data')
                 .onSnapshot((doc) => {
-                    if (doc.exists) {
-                        const data = doc.data().items;
-                        callback(data);
+                    if (!doc.exists) {
+                        callback([]);
+                        return;
                     }
+
+                    const payload = doc.data();
+                    const data = Array.isArray(payload?.items) ? payload.items : [];
+                    callback(data);
                 }, (error) => {
                     console.error(`❌ Error in ${collectionName} listener:`, error);
                 });
