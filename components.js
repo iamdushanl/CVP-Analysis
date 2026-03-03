@@ -414,6 +414,11 @@ const Components = {
    */
   async confirmLogout() {
     this.closeModal();
+
+    if (typeof DataManager !== 'undefined' && typeof DataManager.stopRealtimeSync === 'function') {
+      DataManager.stopRealtimeSync();
+    }
+
     await AuthManager.logout();
     location.reload();
   },

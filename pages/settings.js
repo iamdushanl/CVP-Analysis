@@ -328,6 +328,10 @@ const SettingsPage = {
 
   logout() {
     if (confirm('Are you sure you want to logout?')) {
+      if (typeof DataManager !== 'undefined' && typeof DataManager.stopRealtimeSync === 'function') {
+        DataManager.stopRealtimeSync();
+      }
+
       AuthManager.logout();
       location.reload();
     }
