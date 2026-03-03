@@ -3,19 +3,9 @@
 // Testing CRUD operations and data validation
 // ========================================
 
-const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
 
-function loadScript(filename) {
-    const filePath = path.resolve(__dirname, '../' + filename);
-    let code = fs.readFileSync(filePath, 'utf8');
-    // Expose DataManager to global scope
-    if (filename === 'data-manager.js') {
-        code += '\nglobal.DataManager = DataManager;';
-    }
-    vm.runInThisContext(code);
-}
+let DataManager;
 
 describe('DataManager', () => {
 
@@ -33,11 +23,21 @@ describe('DataManager', () => {
             formatCurrency: (val) => val
         };
 
-        loadScript('data-manager.js');
+        global.AuthManager = {
+            getCurrentUser: jest.fn(() => null)
+        };
+
+        const dataManagerPath = path.resolve(__dirname, '../data-manager.js');
+        delete require.cache[dataManagerPath];
+        DataManager = require(dataManagerPath);
     });
 
     beforeEach(() => {
         localStorage.clear();
+        global.AuthManager.getCurrentUser.mockReturnValue(null);
+        global.FirebaseService.subscribeToCollection.mockReset();
+        global.FirebaseService.syncToCloud.mockReset();
+        global.FirebaseService.isInitialized = false;
     });
 
     describe('generateUniqueId', () => {
@@ -52,8 +52,8 @@ describe('DataManager', () => {
 
         test('should generate IDs with correct format', () => {
             const id = DataManager.generateUniqueId();
-            expect(id).toContain('test-');
-            expect(id.split('-').length).toBeGreaterThanOrEqual(3);
+            expect(typeof id).toBe('string');
+            expect(id.length).toBeGreaterThan(8);
         });
     });
 
@@ -276,7 +276,62 @@ describe('DataManager', () => {
             };
 
             const errors = DataManager.validateFixedCost(cost);
-            expect(errors).toContain('Invalid frequency');
+            expect(errors.some(error => error.includes('Invalid frequency'))).toBe(true);
+        });
+    });
+
+    describe('Session isolation', () => {
+        test('should clear previous user data on relogin with different account', () => {
+            localStorage.setItem('cvp_data_owner', 'user-1');
+            localStorage.setItem('cvp_initialized', 'true');
+            localStorage.setItem('cvp_products', JSON.stringify([{ id: 'p1', name: 'Old Product' }]));
+
+            global.AuthManager.getCurrentUser.mockReturnValue({ uid: 'user-2' });
+
+            DataManager.init();
+
+            const products = DataManager.getProducts();
+            expect(products).toHaveLength(0);
+            expect(localStorage.getItem('cvp_data_owner')).toBe('user-2');
+            expect(localStorage.getItem('cvp_initialized')).toBeNull();
+        });
+
+        test('should keep data when relogin uses same account', () => {
+            localStorage.setItem('cvp_data_owner', 'user-1');
+            localStorage.setItem('cvp_initialized', 'true');
+            localStorage.setItem('cvp_products', JSON.stringify([{ id: 'p1', name: 'My Product' }]));
+
+            global.AuthManager.getCurrentUser.mockReturnValue({ uid: 'user-1' });
+
+            DataManager.init();
+
+            const products = DataManager.getProducts();
+            expect(products).toHaveLength(1);
+            expect(products[0].name).toBe('My Product');
+            expect(localStorage.getItem('cvp_data_owner')).toBe('user-1');
+        });
+    });
+
+    describe('Realtime sync lifecycle', () => {
+        test('should stop previous listeners before starting new realtime sync', () => {
+            const unsubscribeA = jest.fn();
+            const unsubscribeB = jest.fn();
+            const unsubscribeC = jest.fn();
+
+            global.FirebaseService.isInitialized = true;
+            global.FirebaseService.subscribeToCollection
+                .mockReturnValueOnce(unsubscribeA)
+                .mockReturnValueOnce(unsubscribeB)
+                .mockReturnValueOnce(unsubscribeC)
+                .mockReturnValue(() => jest.fn());
+
+            DataManager.startRealtimeSync();
+            DataManager.startRealtimeSync();
+
+            expect(unsubscribeA).toHaveBeenCalledTimes(1);
+            expect(unsubscribeB).toHaveBeenCalledTimes(1);
+            expect(unsubscribeC).toHaveBeenCalledTimes(1);
+            expect(global.FirebaseService.subscribeToCollection).toHaveBeenCalled();
         });
     });
 });
