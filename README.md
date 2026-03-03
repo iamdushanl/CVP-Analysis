@@ -24,6 +24,7 @@ Ask questions like *"What's my break-even point?"* or *"How can I improve my mar
 
 ### ☁️ Hybrid Cloud Storage
 Work online or offline without interruption. The `HybridDataManager` keeps your data in local storage when you're disconnected and syncs automatically with Firebase the moment you're back online.
+Local cache is isolated per authenticated user session, so relogin/account switches don't require manual browser cache clearing.
 
 ### 📊 Interactive Analytics Dashboard
 Real-time KPI tracking across Revenue, Profit, and Contribution Margin — with dynamic heatmaps to surface your top-performing products and regions at a glance.
