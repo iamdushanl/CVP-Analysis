@@ -4,6 +4,40 @@
 // ========================================
 
 const DataManager = {
+  dataOwnerKey: 'cvp_data_owner',
+  realtimeUnsubscribers: [],
+
+  getCurrentUserId() {
+    try {
+      const firebaseUid = FirebaseService?.auth?.currentUser?.uid;
+      if (firebaseUid) return firebaseUid;
+
+      const user = AuthManager?.getCurrentUser?.();
+      if (!user) return null;
+
+      return user.uid || user.id || user.email || null;
+    } catch (error) {
+      console.warn('Could not determine current user ID for data isolation:', error);
+      return null;
+    }
+  },
+
+  ensureSessionDataIsolation() {
+    const currentUserId = this.getCurrentUserId();
+    if (!currentUserId) return;
+
+    const previousUserId = localStorage.getItem(this.dataOwnerKey);
+
+    if (previousUserId && previousUserId !== currentUserId) {
+      console.log('🔐 User changed - clearing previous session data cache');
+      this.clearAll();
+    }
+
+    if (previousUserId !== currentUserId) {
+      localStorage.setItem(this.dataOwnerKey, currentUserId);
+    }
+  },
+
   // ============================================
   // UTILITY FUNCTIONS
   // ============================================
@@ -119,6 +153,14 @@ const DataManager = {
    */
   init() {
     try {
+      this.ensureSessionDataIsolation();
+
+      const currentUserId = this.getCurrentUserId();
+      if (currentUserId) {
+        console.log('✅ Data Manager initialized for authenticated user session');
+        return;
+      }
+
       const hasInitialized = localStorage.getItem('cvp_initialized');
       const products = this.getProducts();
 
@@ -161,10 +203,12 @@ const DataManager = {
       return;
     }
 
+    this.stopRealtimeSync();
+
     console.log('🔄 Starting real-time sync...');
 
     // Subscribe to Products
-    FirebaseService.subscribeToCollection('products', (data) => {
+    const productsUnsubscribe = FirebaseService.subscribeToCollection('products', (data) => {
       if (data && Array.isArray(data)) {
         console.log('📥 Received products update from cloud');
         this.saveProducts(data, true); // true = fromCloud
@@ -172,7 +216,7 @@ const DataManager = {
     });
 
     // Subscribe to Sales
-    FirebaseService.subscribeToCollection('sales', (data) => {
+    const salesUnsubscribe = FirebaseService.subscribeToCollection('sales', (data) => {
       if (data && Array.isArray(data)) {
         console.log('📥 Received sales update from cloud');
         this.saveSales(data, true);
@@ -180,12 +224,27 @@ const DataManager = {
     });
 
     // Subscribe to Fixed Costs
-    FirebaseService.subscribeToCollection('fixed_costs', (data) => {
+    const fixedCostsUnsubscribe = FirebaseService.subscribeToCollection('fixed_costs', (data) => {
       if (data && Array.isArray(data)) {
         console.log('📥 Received fixed costs update from cloud');
         this.saveFixedCosts(data, true);
       }
     });
+
+    this.realtimeUnsubscribers = [productsUnsubscribe, salesUnsubscribe, fixedCostsUnsubscribe]
+      .filter(unsubscribe => typeof unsubscribe === 'function');
+  },
+
+  stopRealtimeSync() {
+    this.realtimeUnsubscribers.forEach((unsubscribe) => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn('⚠️ Failed to unsubscribe realtime listener:', error);
+      }
+    });
+
+    this.realtimeUnsubscribers = [];
   },
 
   // ============================================
@@ -821,13 +880,29 @@ const DataManager = {
   },
 
   // Clear all data
-  clearAll() {
+  clearAll(options = {}) {
+    const { clearOwner = false } = options;
+
     localStorage.removeItem('cvp_products');
     localStorage.removeItem('cvp_sales');
     localStorage.removeItem('cvp_fixed_costs');
     localStorage.removeItem('cvp_initialized');
+    localStorage.removeItem('cvp_version');
+
+    if (clearOwner) {
+      localStorage.removeItem(this.dataOwnerKey);
+    }
   }
 };
 
-// Initialize on load
-DataManager.init();
+if (typeof window !== 'undefined') {
+  window.DataManager = DataManager;
+}
+
+if (typeof globalThis !== 'undefined') {
+  globalThis.DataManager = DataManager;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = DataManager;
+}
