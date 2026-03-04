@@ -11,7 +11,8 @@ const ChatbotUI = {
     // INITIALIZATION
     // ============================================
     init() {
-        if (!ChatbotService.init()) {
+        const hasService = typeof ChatbotService !== 'undefined';
+        if (!hasService || !ChatbotService.init()) {
             console.log('⚠️ Chatbot not initialized - API key required');
         }
 
@@ -25,6 +26,8 @@ const ChatbotUI = {
     // ============================================
     render() {
         const container = document.getElementById('chatbotContainer') || this.createContainer();
+        const hasService = typeof ChatbotService !== 'undefined';
+        const isServiceInitialized = hasService && ChatbotService.isInitialized;
 
         container.innerHTML = `
             <div class="chatbot-widget ${this.isMinimized ? 'minimized' : ''}">
@@ -78,7 +81,7 @@ const ChatbotUI = {
                     </div>
 
                     <!-- API Key Setup (shown if not configured) -->
-                    ${!ChatbotService.isInitialized ? this.renderAPIKeySetup() : ''}
+                    ${!isServiceInitialized ? this.renderAPIKeySetup() : ''}
                 </div>
             </div>
         `;
@@ -123,6 +126,10 @@ const ChatbotUI = {
     },
 
     renderHistory() {
+        if (typeof ChatbotService === 'undefined' || typeof ChatbotService.getHistory !== 'function') {
+            return '';
+        }
+
         const history = ChatbotService.getHistory();
         if (history.length === 0) return '';
 
@@ -140,7 +147,10 @@ const ChatbotUI = {
     },
 
     renderSuggestedPrompts() {
-        const prompts = ChatbotService.getSuggestedPrompts();
+        const prompts = typeof ChatbotService !== 'undefined' && typeof ChatbotService.getSuggestedPrompts === 'function'
+            ? ChatbotService.getSuggestedPrompts()
+            : [];
+
         return prompts.map(prompt => `
             <button class="suggestion-btn" data-prompt="${prompt}">
                 ${prompt}
@@ -239,6 +249,10 @@ const ChatbotUI = {
         } else {
             this.minimize();
         }
+    },
+
+    toggleChat() {
+        this.toggle();
     },
 
     minimize() {
@@ -367,8 +381,22 @@ const ChatbotUI = {
         this.addMessage(`⚠️ ${message}`, false);
     },
 
-    clearChat() {
-        if (confirm('Clear all chat history?')) {
+    clearChat(force = false) {
+        let shouldClear = force;
+
+        if (!shouldClear) {
+            if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+                try {
+                    shouldClear = window.confirm('Clear all chat history?');
+                } catch (error) {
+                    shouldClear = true;
+                }
+            } else {
+                shouldClear = true;
+            }
+        }
+
+        if (shouldClear && typeof ChatbotService !== 'undefined' && typeof ChatbotService.clearHistory === 'function') {
             ChatbotService.clearHistory();
             this.render();
             this.attachEventListeners();
@@ -421,3 +449,11 @@ const ChatbotUI = {
         }
     }
 };
+
+if (typeof globalThis !== 'undefined') {
+    globalThis.ChatbotUI = ChatbotUI;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ChatbotUI;
+}

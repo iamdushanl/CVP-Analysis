@@ -965,6 +965,8 @@ Please provide a clear, natural language response to the user's question using t
         if (this.conversationHistory.length > this.maxHistoryLength) {
             this.conversationHistory = this.conversationHistory.slice(-this.maxHistoryLength);
         }
+
+        this.saveHistory();
     },
 
     saveHistory() {
@@ -997,3 +999,11 @@ Please provide a clear, natural language response to the user's question using t
         ];
     }
 };
+
+if (typeof globalThis !== 'undefined') {
+    globalThis.ChatbotService = ChatbotService;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ChatbotService;
+}

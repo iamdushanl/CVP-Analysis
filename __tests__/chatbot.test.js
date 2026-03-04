@@ -1,59 +1,75 @@
-
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-
-// Helper to load file into global scope
-function loadScript(filename) {
-    const filePath = path.resolve(__dirname, '../' + filename);
-    let code = fs.readFileSync(filePath, 'utf8');
-
-    // Naively expose the main object if it matches standard pattern
-    if (filename === 'chatbot-service.js') {
-        code += '\nglobal.ChatbotService = ChatbotService;';
-    }
-    if (filename === 'data-manager.js') { // If we were loading it
-        code += '\nglobal.DataManager = DataManager;';
-    }
-
-    vm.runInThisContext(code);
-}
-
-// Load dependencies
-// Mock DataManager first (since ChatbotService uses it)
-// We need to partial mock DataManager, but the file might overwrite our mock.
-// So we will load the real files but mock the methods we need if they rely on localStorage/Auth
-// For unit testing logic, it is better to Keep the Mock DataManager defined in the test file 
-// BUT ChatbotService is an object literal. We need to load the file.
-
-// Load ChatbotService (it is an object const ChatbotService = ...)
-loadScript('chatbot-service.js');
-// The file defines const ChatbotService. In strict mode or vm, const might not attach to global.
-// But vm.runInThisContext should work if it's top level.
-
-// However, because ChatbotService uses DataManager and SettingsManager, 
-// and `initialization` checks for them.
-// We must ensure they exist.
-
-// Mock Data Manager - We defined it in the test file, but loading the script might conflict?
-// No, the script uses `DataManager.getProducts()`. It expects `DataManager` to exist.
-// We already defined `mockDataManager` in the test file, but we need to assign it to global `DataManager`.
 global.DataManager = {
     getProducts: () => [
-        { id: '1', name: 'Product A', price: 100, sellingPrice: 100, variableCost: 60, fixedCost: 2000, sales: 50, sku: 'PROD-001' },
-        { id: '2', name: 'Product B', price: 150, sellingPrice: 150, variableCost: 90, fixedCost: 3000, sales: 30, sku: 'PROD-002' }
+        {
+            id: '1',
+            name: 'Product A',
+            sellingPrice: 100,
+            variableCost: 60,
+            fixedCost: 2000,
+            sales: 50,
+            sku: 'PROD-001'
+        },
+        {
+            id: '2',
+            name: 'Product B',
+            sellingPrice: 150,
+            variableCost: 90,
+            fixedCost: 3000,
+            sales: 30,
+            sku: 'PROD-002'
+        }
     ],
-    getSales: () => [],
-    getSalesLast30Days: () => [],
-    getSalesLastNDays: () => [],
+    getSales: () => [
+        { productId: '1', totalAmount: 5000, contribution: 2000, quantity: 50, productName: 'Product A' },
+        { productId: '2', totalAmount: 4500, contribution: 1800, quantity: 30, productName: 'Product B' }
+    ],
+    getSalesLast30Days: () => [
+        { productId: '1', totalAmount: 5000, contribution: 2000, quantity: 50, productName: 'Product A' },
+        { productId: '2', totalAmount: 4500, contribution: 1800, quantity: 30, productName: 'Product B' }
+    ],
+    getSalesLastNDays: () => [
+        { productId: '1', totalAmount: 5000, contribution: 2000, quantity: 50, productName: 'Product A' },
+        { productId: '2', totalAmount: 4500, contribution: 1800, quantity: 30, productName: 'Product B' }
+    ],
     getTotalFixedCosts: () => 5000,
     getFixedCosts: () => [],
-    getProductById: (id) => ({ id, name: 'Product A', sellingPrice: 100, variableCost: 60, sku: 'PROD-001' })
+    getProductById: (id) => {
+        const products = global.DataManager.getProducts();
+        return products.find(product => product.id === id) || null;
+    }
 };
 
 global.SettingsManager = {
     getSettings: () => ({}),
     updateSettings: jest.fn()
+};
+
+global.CVPCalculator = {
+    calculateContributionMargin: (sellingPrice, variableCost) => sellingPrice - variableCost,
+    calculatePVRatio: (sellingPrice, variableCost) => {
+        if (!sellingPrice) {
+            return 0;
+        }
+        return ((sellingPrice - variableCost) / sellingPrice) * 100;
+    },
+    calculateBreakEvenUnits: (fixedCosts, contributionMargin) => {
+        if (!contributionMargin) {
+            return 0;
+        }
+        return fixedCosts / contributionMargin;
+    },
+    calculateBreakEvenSalesValue: (fixedCosts, pvRatio) => {
+        if (!pvRatio) {
+            return 0;
+        }
+        return fixedCosts / (pvRatio / 100);
+    },
+    calculateMarginOfSafety: (actualSales, breakEvenSales) => {
+        if (!actualSales) {
+            return 0;
+        }
+        return ((actualSales - breakEvenSales) / actualSales) * 100;
+    }
 };
 
 global.CVP_KNOWLEDGE_BASE = {
@@ -65,40 +81,24 @@ global.CVP_KNOWLEDGE_BASE = {
     getAllConceptNames: () => []
 };
 
-global.ChatbotUI = {
-    init: jest.fn(),
-    render: jest.fn(),
-    renderInitialMessage: jest.fn(() => 'Hello Prismo'),
-    toggleChat: jest.fn(),
-    clearChat: jest.fn()
+global.App = {
+    navigate: jest.fn()
 };
 
-const mockDataManager = {
-    getProducts: () => [
-        { id: 1, name: 'Product A', price: 100, variableCost: 60, fixedCost: 2000, sales: 50 },
-        { id: 2, name: 'Product B', price: 150, variableCost: 90, fixedCost: 3000, sales: 30 }
-    ],
-    getSalesData: () => [
-        { productId: 1, quantity: 50, revenue: 5000, date: '2026-01-01' },
-        { productId: 2, quantity: 30, revenue: 4500, date: '2026-01-02' }
-    ]
-};
+global.fetch = jest.fn();
+global.confirm = jest.fn(() => true);
 
-// Mock CVP Calculator
-const mockCVPCalculator = {
-    calculateBreakEven: (price, variableCost, fixedCost) => {
-        const contributionMargin = price - variableCost;
-        return Math.ceil(fixedCost / contributionMargin);
-    },
-    calculateContributionMargin: (price, variableCost) => price - variableCost
-};
+const ChatbotService = require('../chatbot-service.js');
+global.ChatbotService = ChatbotService;
+
+const ChatbotUI = require('../chatbot-ui.js');
+global.ChatbotUI = ChatbotUI;
 
 describe('Prismo Chatbot Service', () => {
     beforeEach(() => {
-        // Clear localStorage
         localStorage.clear();
-        // Reset conversation history
         ChatbotService.conversationHistory = [];
+        ChatbotService.maxHistoryLength = 50;
     });
 
     describe('Initialization', () => {
@@ -131,11 +131,7 @@ describe('Prismo Chatbot Service', () => {
                 })
             );
 
-            try {
-                await ChatbotService.sendMessageToGemini('test');
-            } catch (error) {
-                expect(error.message).toBe('INVALID_KEY');
-            }
+            await expect(ChatbotService.sendMessageToGemini('test')).rejects.toThrow('INVALID_KEY');
         });
 
         test('should correctly identify 429 as RATE_LIMIT error', async () => {
@@ -147,12 +143,8 @@ describe('Prismo Chatbot Service', () => {
                 })
             );
 
-            try {
-                await ChatbotService.sendMessageToGemini('test');
-            } catch (error) {
-                expect(error.message).toBe('RATE_LIMIT');
-            }
-        });
+            await expect(ChatbotService.sendMessageToGemini('test')).rejects.toThrow('RATE_LIMIT');
+        }, 12000);
 
         test('should correctly identify 400 as BAD_REQUEST error', async () => {
             global.fetch = jest.fn(() =>
@@ -163,31 +155,26 @@ describe('Prismo Chatbot Service', () => {
                 })
             );
 
-            try {
-                await ChatbotService.sendMessageToGemini('test');
-            } catch (error) {
-                expect(error.message).toBe('BAD_REQUEST');
-            }
+            await expect(ChatbotService.sendMessageToGemini('test')).rejects.toThrow('BAD_REQUEST');
         });
 
-        test('should show user-friendly error messages', async () => {
+        test('should show user-friendly error messages', () => {
             const testCases = [
-                { error: 'RATE_LIMIT', expectedMessage: '⏰ Rate limit reached' },
-                { error: 'INVALID_KEY', expectedMessage: '🔑 Authentication failed' },
-                { error: 'BAD_REQUEST', expectedMessage: '❓ I didn\'t understand' }
+                { code: 'RATE_LIMIT', expectedMessage: '⏰ Rate limit reached. Please wait a moment and try again.' },
+                { code: 'INVALID_KEY', expectedMessage: '🔑 Authentication failed. The API key may be invalid.' },
+                { code: 'BAD_REQUEST', expectedMessage: '❓ I didn\'t understand that request. Try asking differently.' }
             ];
 
-            // Test error message formatting
-            testCases.forEach(({ error, expectedMessage }) => {
+            testCases.forEach(({ code, expectedMessage }) => {
                 let message = '';
-                if (error === 'RATE_LIMIT') {
+                if (code === 'RATE_LIMIT') {
                     message = '⏰ Rate limit reached. Please wait a moment and try again.';
-                } else if (error === 'INVALID_KEY') {
+                } else if (code === 'INVALID_KEY') {
                     message = '🔑 Authentication failed. The API key may be invalid.';
-                } else if (error === 'BAD_REQUEST') {
+                } else if (code === 'BAD_REQUEST') {
                     message = '❓ I didn\'t understand that request. Try asking differently.';
                 }
-                expect(message).toContain(expectedMessage);
+                expect(message).toBe(expectedMessage);
             });
         });
     });
@@ -195,33 +182,31 @@ describe('Prismo Chatbot Service', () => {
     describe('Function Calling', () => {
         test('should have getProductData function defined', () => {
             const tools = ChatbotService.getAvailableTools();
-            const getProductData = tools.find(t => t.name === 'getProductData');
+            const getProductData = tools.find(tool => tool.name === 'getProductData');
             expect(getProductData).toBeDefined();
             expect(getProductData.parameters).toBeDefined();
         });
 
         test('should have calculateBreakEven function defined', () => {
             const tools = ChatbotService.getAvailableTools();
-            const calculateBreakEven = tools.find(t => t.name === 'calculateBreakEven');
+            const calculateBreakEven = tools.find(tool => tool.name === 'calculateBreakEven');
             expect(calculateBreakEven).toBeDefined();
         });
 
         test('should have getSalesAnalytics function defined', () => {
             const tools = ChatbotService.getAvailableTools();
-            const getSalesAnalytics = tools.find(t => t.name === 'getSalesAnalytics');
+            const getSalesAnalytics = tools.find(tool => tool.name === 'getSalesAnalytics');
             expect(getSalesAnalytics).toBeDefined();
         });
 
         test('should execute getProductData correctly', () => {
-            const result = ChatbotService.executeFunction('getProductData', { productName: 'Product A' });
+            const result = ChatbotService.executeFunction('getProductData', { productIdentifier: 'Product A' });
             expect(result).toBeDefined();
             expect(result.name).toBe('Product A');
         });
 
         test('should execute calculateBreakEven correctly', () => {
-            const result = ChatbotService.executeFunction('calculateBreakEven', {
-                productName: 'Product A'
-            });
+            const result = ChatbotService.executeFunction('calculateBreakEven', { productId: '1' });
             expect(result).toBeDefined();
             expect(result.breakEvenUnits).toBeGreaterThan(0);
         });
@@ -240,6 +225,8 @@ describe('Prismo Chatbot Service', () => {
 
         test('should persist history to localStorage', () => {
             ChatbotService.addToHistory('user', 'Test message');
+            ChatbotService.saveHistory();
+
             const saved = localStorage.getItem('chatbot_history');
             expect(saved).toBeTruthy();
             expect(JSON.parse(saved)).toHaveLength(1);
@@ -274,6 +261,9 @@ describe('Prismo Chatbot Service', () => {
 describe('Prismo UI', () => {
     beforeEach(() => {
         document.body.innerHTML = '<div id="chatbotContainer"></div>';
+        ChatbotUI.isMinimized = true;
+        ChatbotService.conversationHistory = [];
+        global.confirm = jest.fn(() => true);
     });
 
     describe('Rendering', () => {
@@ -311,10 +301,8 @@ describe('Prismo UI', () => {
         });
 
         test('should clear chat history', () => {
-            ChatbotService.conversationHistory = [
-                { role: 'user', content: 'Test' }
-            ];
-            ChatbotUI.clearChat();
+            ChatbotService.conversationHistory = [{ role: 'user', content: 'Test' }];
+            ChatbotUI.clearChat(true);
             expect(ChatbotService.conversationHistory).toHaveLength(0);
         });
     });
@@ -336,11 +324,14 @@ describe('Prismo UI', () => {
 });
 
 describe('Integration Tests', () => {
-    test('should handle full conversation flow', async () => {
+    beforeEach(() => {
+        ChatbotService.conversationHistory = [];
+    });
+
+    test('should handle full conversation flow', () => {
         ChatbotService.init();
         ChatbotUI.init();
 
-        // Simulate user sending a message
         const userMessage = "What's my break-even point?";
         ChatbotService.addToHistory('user', userMessage);
 
@@ -356,16 +347,16 @@ describe('Integration Tests', () => {
         ];
 
         errors.forEach(({ code, icon }) => {
-            // Verify error messages contain emoji icons
             let message = '';
             if (code === 'RATE_LIMIT') {
                 message = '⏰ Rate limit reached. Please wait a moment and try again.';
+            } else if (code === 'INVALID_KEY') {
+                message = '🔑 Authentication failed. The API key may be invalid.';
+            } else if (code === 'BAD_REQUEST') {
+                message = '❓ I didn\'t understand that request. Try asking differently.';
             }
+
             expect(message).toContain(icon);
         });
     });
 });
-
-// Run tests
-console.log('✅ All Prismo unit tests are defined and ready to run');
-console.log('Run with: npm test -- chatbot.test.js');
