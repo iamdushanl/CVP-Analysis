@@ -395,18 +395,17 @@ const Components = {
     const dropdown = document.getElementById('userProfileDropdown');
     if (dropdown) dropdown.classList.remove('active');
 
-    // Show custom confirmation modal
-    this.showModal(`
-      <div style="padding: var(--space-6); text-align: center;">
+    // Show custom confirmation modal using proper showModal(title, content, actions) API
+    this.showModal(
+      'Logout Confirmation',
+      `<div style="text-align: center;">
         <div style="font-size: 3rem; margin-bottom: var(--space-4);">👋</div>
-        <h3 style="font-size: var(--text-xl); font-weight: 600; margin-bottom: var(--space-4);">Logout Confirmation</h3>
-        <p style="color: var(--text-secondary); margin-bottom: var(--space-6);">Are you sure you want to logout?</p>
-        <div style="display: flex; gap: var(--space-3); justify-content: center;">
-          <button class="btn btn-secondary" onclick="Components.closeModal();">Cancel</button>
-          <button class="btn btn-danger" onclick="Components.confirmLogout();">Logout</button>
-        </div>
-      </div>
-    `);
+        <p style="color: var(--text-secondary);">Are you sure you want to logout? Your session will be ended.</p>
+      </div>`,
+      [
+        { label: '🚪 Logout', class: 'btn-danger', onClick: 'Components.confirmLogout()' }
+      ]
+    );
   },
 
   /**
