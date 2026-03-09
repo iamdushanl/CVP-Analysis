@@ -2,6 +2,16 @@
 // Main Application Controller
 // ========================================
 
+// Global error handler for production resilience
+window.addEventListener('error', (event) => {
+    console.error('🔥 Unhandled error:', event.error?.message || event.message);
+    console.error('   Source:', event.filename, 'Line:', event.lineno);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('🔥 Unhandled promise rejection:', event.reason);
+});
+
 const App = {
     currentPage: 'dashboard',
 
@@ -257,7 +267,23 @@ const App = {
 };
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => App.init());
+    document.addEventListener('DOMContentLoaded', () => {
+        App.init().catch(err => {
+            console.error('🔥 Fatal initialization error:', err);
+            const contentArea = document.getElementById('contentArea');
+            if (contentArea) {
+                contentArea.innerHTML = `
+                    <div style="padding: 3rem; text-align: center;">
+                        <h2 style="color: #ef4444;">⚠️ Application Failed to Load</h2>
+                        <p style="margin: 1rem 0; color: #6b7280;">An unexpected error occurred during startup.</p>
+                        <button onclick="location.reload()" style="padding: 0.75rem 2rem; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem;">Reload Page</button>
+                    </div>
+                `;
+            }
+        });
+    });
 } else {
-    App.init();
+    App.init().catch(err => {
+        console.error('🔥 Fatal initialization error:', err);
+    });
 }

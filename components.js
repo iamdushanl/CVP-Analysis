@@ -108,7 +108,8 @@ const Components = {
   closeModal(event) {
     // If event exists and the click was not directly on the overlay, ignore it
     if (event && event.target !== event.currentTarget) return;
-    document.getElementById('modalContainer').innerHTML = '';
+    const container = document.getElementById('modalContainer');
+    if (container) container.innerHTML = '';
   },
 
   /**
@@ -185,7 +186,7 @@ const Components = {
 
     // Fallback if SettingsManager not loaded
     const num = parseFloat(amount);
-    if (isNaN(num)) return 'Rs. 0.00';
+    if (isNaN(num) || !isFinite(num)) return 'Rs. 0.00';
 
     return 'Rs. ' + num.toLocaleString('en-US', {
       minimumFractionDigits: 2,
