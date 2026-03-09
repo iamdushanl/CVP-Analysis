@@ -266,11 +266,24 @@ const AuthPages = {
   },
 
   showLoginPage() {
-    document.body.innerHTML = this.renderLoginPage();
+    // Render into app-container instead of destroying entire body
+    // This preserves script tags, modal/toast containers, and event listeners
+    const appContainer = document.querySelector('.app-container');
+    if (appContainer) {
+      appContainer.innerHTML = this.renderLoginPage();
+    } else {
+      // Fallback if app-container doesn't exist yet
+      document.body.innerHTML = this.renderLoginPage();
+    }
   },
 
   showRegisterPage() {
-    document.body.innerHTML = this.renderRegisterPage();
+    const appContainer = document.querySelector('.app-container');
+    if (appContainer) {
+      appContainer.innerHTML = this.renderRegisterPage();
+    } else {
+      document.body.innerHTML = this.renderRegisterPage();
+    }
   },
 
   showForgotPassword() {
