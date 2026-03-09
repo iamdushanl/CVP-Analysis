@@ -2,7 +2,7 @@
 
 > AI-powered Cost-Volume-Profit analysis for modern finance teams — real-time analytics, cloud sync, and conversational business intelligence in one platform.
 
-![Version](https://img.shields.io/badge/version-2.0.0-6c63ff?style=flat-square)
+![Version](https://img.shields.io/badge/version-2.1.0-6c63ff?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)
 ![Firebase](https://img.shields.io/badge/Firebase-enabled-f97316?style=flat-square&logo=firebase&logoColor=white)
 ![AI](https://img.shields.io/badge/Gemini-AI%20Powered-8b5cf6?style=flat-square&logo=google&logoColor=white)
@@ -155,6 +155,30 @@ npm test
 # Run with coverage report
 npm run test:coverage
 ```
+
+---
+
+## Changelog
+
+### v2.1.0 — Production Stability Release
+
+**Critical Fixes**
+- **`components.js`** — Fixed `handleLogout()` passing HTML body as modal title, causing broken logout confirmation UI
+- **`pages/auth.js`** — Replaced deprecated `window.event` in `socialLogin()` with DOM query (crashed in Firefox)
+- **`pages/auth.js`** — Auth pages now render into `.app-container` instead of nuking `document.body.innerHTML`
+
+**Functional Fixes**
+- **`app.js`** — Firebase is now explicitly initialized before starting real-time sync (prevents silent sync failure)
+- **`cvp-calculator.js`** — `calculateBreakEvenUnits()` and `calculateBreakEvenSalesValue()` now return `Infinity` for zero/negative margin instead of `0`
+- **`settings-manager.js`** — Removed duplicate `DOMContentLoaded` initialization that raced with auth
+
+**Enhancements**
+- **`index.html`** — Added Chart.js annotation plugin for break-even line rendering on CVP chart
+- **`app.js`** — Added global error handlers and production error boundaries with user-friendly recovery UI
+- **`components.js`** — Added null-safety to `closeModal()` and `Infinity`-safety to `formatCurrency()`
+
+**Cleanup**
+- Removed dead `pages/forecast.js.broken` file
 
 ---
 
