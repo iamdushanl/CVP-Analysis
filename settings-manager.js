@@ -206,12 +206,9 @@ const SettingsManager = {
     }
 };
 
-// Initialize settings on load
-if (typeof window !== 'undefined') {
-    document.addEventListener('DOMContentLoaded', () => {
-        SettingsManager.initializeFromUser();
-    });
-}
+// Note: SettingsManager.initializeFromUser() is called explicitly by App.init()
+// after authentication, so no automatic DOMContentLoaded init is needed here.
+// The previous auto-init raced with auth and could apply defaults prematurely.
 
 /**
  * API Contracts for Backend Integration
