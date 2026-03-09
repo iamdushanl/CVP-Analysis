@@ -283,7 +283,9 @@ const AuthPages = {
       return;
     }
 
-    const btn = event?.currentTarget || document.querySelector('.social-item-btn');
+    // Use DOM query instead of deprecated implicit window.event
+    const btn = document.querySelector('.social-item-btn');
+    if (!btn) return;
     const originalHTML = btn.innerHTML;
     btn.style.pointerEvents = 'none';
     btn.innerHTML = '<div class="btn-loader"></div>';
