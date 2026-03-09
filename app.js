@@ -22,6 +22,16 @@ const App = {
         SettingsManager.initializeFromUser();
         DataManager.init();
 
+        // Ensure Firebase is initialized before starting real-time sync
+        // hydrateSessionFromFirebase may have returned early if local user was cached
+        if (typeof FirebaseService !== 'undefined' && !FirebaseService.isInitialized) {
+            try {
+                await FirebaseService.init();
+            } catch (e) {
+                console.warn('⚠️ Firebase init failed, continuing without cloud sync:', e);
+            }
+        }
+
         // Start Real-time Sync
         DataManager.startRealtimeSync();
 
