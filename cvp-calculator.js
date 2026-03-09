@@ -32,7 +32,7 @@ const CVPCalculator = {
      * @returns {number} Break-even units
      */
     calculateBreakEvenUnits(fixedCosts, contributionMargin) {
-        if (contributionMargin === 0) return 0;
+        if (contributionMargin <= 0) return Infinity; // Cannot break even with zero/negative margin
         return fixedCosts / contributionMargin;
     },
 
@@ -43,7 +43,7 @@ const CVPCalculator = {
      * @returns {number} Break-even sales value
      */
     calculateBreakEvenSalesValue(fixedCosts, pvRatio) {
-        if (pvRatio === 0) return 0;
+        if (pvRatio <= 0) return Infinity; // Cannot break even with zero/negative margin
         return fixedCosts / (pvRatio / 100);
     },
 

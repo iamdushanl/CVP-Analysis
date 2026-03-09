@@ -21,12 +21,12 @@ describe('CVPCalculator', () => {
             },
 
             calculateBreakEvenUnits(fixedCosts, contributionMargin) {
-                if (contributionMargin === 0) return 0;
+                if (contributionMargin <= 0) return Infinity;
                 return fixedCosts / contributionMargin;
             },
 
             calculateBreakEvenSalesValue(fixedCosts, pvRatio) {
-                if (pvRatio === 0) return 0;
+                if (pvRatio <= 0) return Infinity;
                 return (fixedCosts / pvRatio) * 100;
             },
 
@@ -109,7 +109,7 @@ describe('CVPCalculator', () => {
         });
 
         test('should handle zero contribution margin (division by zero)', () => {
-            expect(CVPCalculator.calculateBreakEvenUnits(10000, 0)).toBe(0);
+            expect(CVPCalculator.calculateBreakEvenUnits(10000, 0)).toBe(Infinity);
         });
 
         test('should handle zero fixed costs', () => {
@@ -124,7 +124,7 @@ describe('CVPCalculator', () => {
         });
 
         test('should handle zero PV ratio (division by zero)', () => {
-            expect(CVPCalculator.calculateBreakEvenSalesValue(10000, 0)).toBe(0);
+            expect(CVPCalculator.calculateBreakEvenSalesValue(10000, 0)).toBe(Infinity);
         });
     });
 
